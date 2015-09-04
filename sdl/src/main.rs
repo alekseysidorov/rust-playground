@@ -1,7 +1,7 @@
 extern crate sdl2;
 
 use std::vec::Vec;
-use std::f64::consts;
+use std::f64::consts::PI;
 
 use sdl2::pixels::Color;
 use sdl2::keyboard::Keycode;
@@ -20,18 +20,19 @@ fn draw_koch(renderer: &mut Renderer, p: Point, q: Point, n: i32)
         
         let s;
         {
-            let f1 = (p.y() - q.y()) as f32 * f32::sqrt(3.0) / 6.0;
-            let f2 = (p.y() - q.y()) as f32 * f32::sqrt(3.0) / 6.0;
+            let d : f32 = f32::sqrt(3.0) / 6.0;
+            let f1: f32 = (p.y() - q.y()) as f32 * d;
+            let f2: f32 = (p.y() - q.y()) as f32 * d;
             
             s = Point::new(
-                (p.x() + q.x()) / 2 - f1 as i32,
-                (p.y() + q.y()) / 2 + f2 as i32,
+                ((p.x() + q.x()) as f32 / 2.0 - f1) as i32,
+                ((p.y() + q.y()) as f32 / 2.0 + f2) as i32,
             );
         }
         
         let t = Point::new(
-            (p.x() + 2 * q.x()) / 3,
-            (p.y() + 2 * q.y()) / 3        
+            ((p.x() + 2 * q.x()) as f32 / 3.0) as i32,
+            ((p.y() + 2 * q.y()) as f32 / 3.0) as i32        
         );
         
         draw_koch(renderer, p, r, n - 1);
@@ -46,9 +47,11 @@ fn draw_koch_snow_flake(renderer: &mut Renderer, c: Point, d: f64, n: i32, m: us
     let mut vs = Vec::with_capacity(m);
     
     for i in 0..m {
+        let x: f64 = c.x() as f64 + d * f64::cos((2.0*PI / m as f64) * i as f64);
+        let y: f64 = c.y() as f64 - d * f64::sin((2.0*PI / m as f64) * i as f64);
         let p = Point::new(
-            (c.x() as f64 + (d * f64::cos(2.0 * 3.14 / (m * i) as f64))) as i32,
-            (c.y() as f64 - (d * f64::sin(2.0 * 3.14 / (m * i) as f64))) as i32,
+            x as i32,
+            y as i32,
         );
         vs.push(p);
     }
@@ -61,7 +64,10 @@ fn main() {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
     
-    let window = video_subsystem.window("Rust sdl example", 800, 600)
+    let w: u32 = 1280;
+    let h: u32 = 1024;
+    
+    let window = video_subsystem.window("Rust sdl example", w, h)
         .position_centered()
         .opengl()
         .build()
@@ -73,7 +79,7 @@ fn main() {
     renderer.clear();
     
     renderer.set_draw_color(Color::RGB(255,255,255));
-    draw_koch_snow_flake(&mut renderer, Point::new(400, 300), 200.0, 2, 4);
+    draw_koch_snow_flake(&mut renderer, Point::new(w as i32 / 2, h as i32 / 2), h as f64 / 2.0, 8, 4);
     
     renderer.present();
     
