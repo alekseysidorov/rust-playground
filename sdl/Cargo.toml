@@ -1,0 +1,8 @@
+[package]
+name = "3d-learning"
+version = "0.1.0"
+authors = ["Aleksey Sidorov <gorthauer87@ya.ru>"]
+
+[dependencies]
+sdl2="*"
+
