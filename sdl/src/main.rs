@@ -8,31 +8,56 @@ use sdl2::keyboard::Keycode;
 use sdl2::rect::Point;
 use sdl2::render::Renderer;
 
-fn draw_koch(renderer: &mut Renderer, p: Point, q: Point, n: i32)
+#[derive(Copy, Clone)]
+struct PointF {
+    x: f64,
+    y: f64,
+}
+
+impl PointF {
+
+    fn new(x: f64, y: f64) -> PointF
+    {
+        PointF {
+            x: x,
+            y: y
+        }
+    }
+
+    fn round(&self) -> Point
+    {
+        Point::new(self.x as i32, self.y as i32)
+    }
+    
+    fn x(&self) -> f64 { self.x }
+    fn y(&self) -> f64 { self.y }
+}
+
+fn draw_koch(renderer: &mut Renderer, p: PointF, q: PointF, n: i32)
 {
     if n == 0 {
-        renderer.draw_line(p, q);
+        renderer.draw_line(p.round(), q.round());
     } else {
-        let r = Point::new(
-            (2 * p.x() + q.x()) / 3,
-            (2 * p.y() + q.y()) / 3
+        let r = PointF::new(
+            (2.0 * p.x() + q.x()) / 3.0,
+            (2.0 * p.y() + q.y()) / 3.0
         );
         
         let s;
         {
-            let d : f32 = f32::sqrt(3.0) / 6.0;
-            let f1: f32 = (p.y() - q.y()) as f32 * d;
-            let f2: f32 = (p.y() - q.y()) as f32 * d;
+            let d : f64 = f64::sqrt(3.0) / 6.0;
+            let f1: f64 = (p.y() - q.y()) * d;
+            let f2: f64 = (p.x() - q.x()) * d;
             
-            s = Point::new(
-                ((p.x() + q.x()) as f32 / 2.0 - f1) as i32,
-                ((p.y() + q.y()) as f32 / 2.0 + f2) as i32,
+            s = PointF::new(
+                ((p.x() + q.x()) / 2.0 - f1),
+                ((p.y() + q.y()) / 2.0 + f2),
             );
         }
         
-        let t = Point::new(
-            ((p.x() + 2 * q.x()) as f32 / 3.0) as i32,
-            ((p.y() + 2 * q.y()) as f32 / 3.0) as i32        
+        let t = PointF::new(
+            ((p.x() + 2.0 * q.x()) / 3.0),
+            ((p.y() + 2.0 * q.y()) / 3.0)        
         );
         
         draw_koch(renderer, p, r, n - 1);
@@ -42,16 +67,20 @@ fn draw_koch(renderer: &mut Renderer, p: Point, q: Point, n: i32)
     }
 }
 
-fn draw_koch_snow_flake(renderer: &mut Renderer, c: Point, d: f64, n: i32, m: usize)
+fn draw_koch_snow_flake(renderer: &mut Renderer, c: PointF, d: f64, n: i32, m: usize)
 {
     let mut vs = Vec::with_capacity(m);
     
     for i in 0..m {
-        let x: f64 = c.x() as f64 + d * f64::cos((2.0*PI / m as f64) * i as f64);
-        let y: f64 = c.y() as f64 - d * f64::sin((2.0*PI / m as f64) * i as f64);
-        let p = Point::new(
-            x as i32,
-            y as i32,
+        let m: f64 = m as f64;
+        let i: f64 = i as f64;
+    
+        let x: f64 = c.x() + d * f64::cos((2.0*PI / m) * i);
+        let y: f64 = c.y() - d * f64::sin((2.0*PI / m) * i);
+        
+        let p = PointF::new(
+            x,
+            y,
         );
         vs.push(p);
     }
@@ -64,8 +93,8 @@ fn main() {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
     
-    let w: u32 = 1280;
-    let h: u32 = 1024;
+    let w: u32 = 1000;
+    let h: u32 = 1000;
     
     let window = video_subsystem.window("Rust sdl example", w, h)
         .position_centered()
@@ -79,7 +108,11 @@ fn main() {
     renderer.clear();
     
     renderer.set_draw_color(Color::RGB(255,255,255));
-    draw_koch_snow_flake(&mut renderer, Point::new(w as i32 / 2, h as i32 / 2), h as f64 / 2.0, 8, 4);
+    draw_koch_snow_flake(&mut renderer, 
+                         PointF::new(w as f64 / 2.0, h as f64 / 2.0), 
+                         h as f64 / 4.0, 
+                         7, 
+                         3);
     
     renderer.present();
     
