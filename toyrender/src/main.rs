@@ -33,40 +33,38 @@ impl SdlCanvas {
         let sx = if b.x() - x > 0 { 1 } else { -1 };
         let sy = if b.y() - y > 0 { 1 } else { -1 };
         if dx > dy {
-            let mut dx = 0;
-            let mut dy = 0;
+            let rx = (b.x() - x).abs();
+            let ry = (b.y() - y).abs();
+        
+            let mut error  = 0;
+            let mut delta_error = ry;
             while x != b.x() {
-                let rx = (b.x() - x).abs();
-                let ry = (b.y() - y).abs();
+                error += delta_error;                
                 
-                dx += rx;
-                dy += ry;
-                if dy >= dx {
+                if 2 * error >= rx {
                     y += sy;
+                    error -= rx
                 }
             
                 self.set_pixel(x, y, color);
                 x += sx;
-                dx -= rx + sx;
-                dy -= rx + sx;
             }
         } else {
-            let mut dx = 0;
-            let mut dy = 0;
+            let rx = (b.x() - x).abs();
+            let ry = (b.y() - y).abs();
+        
+            let mut error  = 0;
+            let mut delta_error = rx;
             while y != b.y() {
-                let rx = (b.x() - x).abs();
-                let ry = (b.y() - y).abs();
+                error += delta_error;                
                 
-                dx += rx;
-                dy += ry;
-                if dx >= dy {
-                    y += sx;
+                if 2 * error >= ry {
+                    x += sx;
+                    error -= ry
                 }
             
                 self.set_pixel(x, y, color);
                 y += sy;
-                dx -= ry;
-                dy -= ry;
             }
         }
     }
@@ -93,6 +91,7 @@ pub fn main() {
     let mut canvas = SdlCanvas::new(renderer);
     canvas.line(Point::new(100, 50), Point::new(400, 200), 0xFF);
     canvas.line(Point::new(400, 200), Point::new(300, 250), 0xFFFFF);
+    canvas.line(Point::new(300, 250), Point::new(100, 50), 0xEEFFFFF);
     
     let mut running = true;
     let mut event_pump = sdl_context.event_pump().unwrap();
