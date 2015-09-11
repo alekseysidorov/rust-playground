@@ -72,7 +72,6 @@ impl SdlCanvas {
     pub fn set_pixel(&mut self, x: i32, y: i32, color: u32) {
         self.renderer.set_draw_color(Color::RGB((color >> (8*2)) as u8, (color >> (8*1)) as u8, color as u8));
         self.renderer.draw_point(Point::new(x, y));
-        self.renderer.present();
     }
 }
 
@@ -92,6 +91,7 @@ pub fn main() {
     canvas.line(Point::new(100, 50), Point::new(400, 200), 0xFF);
     canvas.line(Point::new(400, 200), Point::new(300, 250), 0xFFFFF);
     canvas.line(Point::new(300, 250), Point::new(100, 50), 0xEEFFFFF);
+    canvas.present();
     
     let mut running = true;
     let mut event_pump = sdl_context.event_pump().unwrap();
