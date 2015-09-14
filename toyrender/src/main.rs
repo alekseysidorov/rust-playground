@@ -1,7 +1,12 @@
 extern crate sdl2;
 
-use sdl2::pixels::PixelFormatEnum;
-use sdl2::rect::Rect;
+use std::default::Default;
+
+use std::io::prelude::*;
+use std::path::Path;
+use std::fs::File;
+use std::io::BufReader;
+
 use sdl2::rect::Point;
 use sdl2::pixels::Color;
 use sdl2::keyboard::Keycode;
@@ -10,6 +15,69 @@ use sdl2::render::Renderer;
 struct SdlCanvas
 {
     renderer: Renderer<'static>
+}
+
+struct Vector3D {
+    x: f32,
+    y: f32,
+    z: f32,
+}
+
+impl Vector3D {
+    pub fn new(x: f32, y: f32, z: f32) -> Vector3D {
+        Vector3D {
+            x: x, y:y, z:z
+        }
+    }
+}
+
+#[derive(Default)]
+struct Model {
+    pub verticies: Vec<Vector3D>,
+    pub faces: Vec<[i32; 3]>
+}
+
+impl Model {
+    pub fn new() -> Model {
+        Model {
+            ..Default::default()
+        }
+    }
+
+    pub fn load_from_file(file_path: &str) -> Model {
+        let path = Path::new(file_path);
+        let file = BufReader::new(File::open(&path).unwrap());
+
+        let mut model = Model::new();
+
+        for line in file.lines() {
+            let line = line.unwrap();
+
+            let words: Vec<&str>;
+            words = line.split_whitespace().collect();
+            if line.starts_with("v ") {
+                
+                let mut points : [f32; 3] = [ 0.0, 0.0, 0.0 ];
+                for i in 0..3 {
+                    points[i] = words[i+1].parse::<f32>().unwrap();
+                }                
+                let v = Vector3D::new(points[0], points[1], points[2]);
+                model.verticies.push(v);
+            } else if line.starts_with("f ") {
+                let mut face = [-1, -1, -1];
+
+                for i in 0..3 {
+                    let mut words = words[i+1].split("/");
+                    face[i] = words.next().unwrap().parse::<i32>().unwrap();
+                    face[i] -= 1;
+                }
+                model.faces.push(face);
+
+            }
+        }
+
+        return model;
+    }
 }
 
 impl SdlCanvas {
@@ -37,7 +105,7 @@ impl SdlCanvas {
             let ry = (b.y() - y).abs();
         
             let mut error  = 0;
-            let mut delta_error = ry;
+            let delta_error = ry;
             while x != b.x() {
                 error += delta_error;                
                 
@@ -54,7 +122,7 @@ impl SdlCanvas {
             let ry = (b.y() - y).abs();
         
             let mut error  = 0;
-            let mut delta_error = rx;
+            let delta_error = rx;
             while y != b.y() {
                 error += delta_error;                
                 
@@ -79,18 +147,40 @@ pub fn main() {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
 
-    let window = video_subsystem.window("rust-sdl2 demo: Video", 800, 600)
+    let w = 900;
+    let h = 900;
+
+    let window = video_subsystem.window("rust-sdl2 demo: Video", w, h)
         .position_centered()
         .opengl()
         .build()
         .unwrap();
 
-    let mut renderer = window.renderer().build().unwrap();
+    let renderer = window.renderer().build().unwrap();
     
     let mut canvas = SdlCanvas::new(renderer);
-    canvas.line(Point::new(100, 50), Point::new(400, 200), 0xFF);
-    canvas.line(Point::new(400, 200), Point::new(300, 250), 0xFFFFF);
-    canvas.line(Point::new(300, 250), Point::new(100, 50), 0xEEFFFFF);
+
+    let model = Model::load_from_file("obj/african_head.obj");
+    for face in model.faces {
+
+        for i in 0..3 {
+            let v0 = &model.verticies[face[i] as usize];
+            let v1 = &model.verticies[face[(i+1)%3] as usize];
+
+            let conv = |v : &Vector3D, w, h| {
+                let x = (v.x + 1.0) * w as f32 / 2.0;
+                let y = (v.y + 1.0) * h as f32 / 2.0;
+
+                (w as i32 - x as i32, h as i32 - y as i32)
+            };
+
+            let (x0, y0) = conv(&v0, w, h);
+            let (x1, y1) = conv(&v1, w, h);
+
+            canvas.line(Point::new(x0, y0), Point::new(x1, y1), 0xFFFFFF);
+        }
+    }
+
     canvas.present();
     
     let mut running = true;
