@@ -137,6 +137,13 @@ impl SdlCanvas {
         }
     }
     
+    pub fn triangle(&mut self, a: Point, b: Point, c: Point, color: u32)
+    {
+        self.line(a, b, color);
+        self.line(b, c, color);
+        self.line(c, a, color);
+    }
+    
     pub fn set_pixel(&mut self, x: i32, y: i32, color: u32) {
         self.renderer.set_draw_color(Color::RGB((color >> (8*2)) as u8, (color >> (8*1)) as u8, color as u8));
         self.renderer.draw_point(Point::new(x, y));
@@ -159,28 +166,32 @@ pub fn main() {
     let renderer = window.renderer().build().unwrap();
     
     let mut canvas = SdlCanvas::new(renderer);
+    
+    canvas.triangle(Point::new(100, 50), Point::new(150, 60), Point::new(120, 110), 0xFF);
+    
+    canvas.triangle(Point::new(150, 250), Point::new(350, 70), Point::new(120, 610), 0xFF00FF);
 
-    let model = Model::load_from_file("obj/african_head.obj");
-    for face in model.faces {
-
-        for i in 0..3 {
-            let v0 = &model.verticies[face[i] as usize];
-            let v1 = &model.verticies[face[(i+1)%3] as usize];
-
-            let conv = |v : &Vector3D, w, h| {
-                let x = (v.x + 1.0) * w as f32 / 2.0;
-                let y = (v.y + 1.0) * h as f32 / 2.0;
-
-                (w as i32 - x as i32, h as i32 - y as i32)
-            };
-
-            let (x0, y0) = conv(&v0, w, h);
-            let (x1, y1) = conv(&v1, w, h);
-
-            canvas.line(Point::new(x0, y0), Point::new(x1, y1), 0xFFFFFF);
-        }
-    }
-
+//     let model = Model::load_from_file("obj/african_head.obj");
+//     for face in model.faces {
+// 
+//         for i in 0..3 {
+//             let v0 = &model.verticies[face[i] as usize];
+//             let v1 = &model.verticies[face[(i+1)%3] as usize];
+// 
+//             let conv = |v : &Vector3D, w, h| {
+//                 let x = (v.x + 1.0) * w as f32 / 2.0;
+//                 let y = (v.y + 1.0) * h as f32 / 2.0;
+// 
+//                 (w as i32 - x as i32, h as i32 - y as i32)
+//             };
+// 
+//             let (x0, y0) = conv(&v0, w, h);
+//             let (x1, y1) = conv(&v1, w, h);
+// 
+//             canvas.line(Point::new(x0, y0), Point::new(x1, y1), 0xFFFFFF);
+//         }
+//     }
+// 
     canvas.present();
     
     let mut running = true;
