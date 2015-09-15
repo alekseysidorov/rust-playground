@@ -1,6 +1,7 @@
 extern crate sdl2;
 
 use std::default::Default;
+use std::mem;
 
 use std::io::prelude::*;
 use std::path::Path;
@@ -137,8 +138,12 @@ impl SdlCanvas {
         }
     }
     
-    pub fn triangle(&mut self, a: Point, b: Point, c: Point, color: u32)
+    pub fn triangle(&mut self, mut a: Point, mut b: Point, mut c: Point, color: u32)
     {
+        if b.y() > a.y() { std::mem::swap(&mut a, &mut b); }
+        if c.y() > a.y() { std::mem::swap(&mut a, &mut c); }
+        if c.y() > b.y() { std::mem::swap(&mut c, &mut b); }        
+    
         self.line(a, b, color);
         self.line(b, c, color);
         self.line(c, a, color);
