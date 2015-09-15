@@ -108,13 +108,7 @@ impl SdlCanvas {
             let mut error  = 0;
             let delta_error = ry;
             while x != b.x() {
-                error += delta_error;                
-                
-                if 2 * error >= rx {
-                    y += sy;
-                    error -= rx
-                }
-            
+                self.do_step(rx, delta_error, sy, &mut y, &mut error);           
                 self.set_pixel(x, y, color);
                 x += sx;
             }
@@ -125,16 +119,20 @@ impl SdlCanvas {
             let mut error  = 0;
             let delta_error = rx;
             while y != b.y() {
-                error += delta_error;                
-                
-                if 2 * error >= ry {
-                    x += sx;
-                    error -= ry
-                }
-            
+                self.do_step(ry, delta_error, sx, &mut x, &mut error);            
                 self.set_pixel(x, y, color);
                 y += sy;
             }
+        }
+    }
+    
+    fn do_step(&self, delta: i32, delta_error: i32, step: i32, v: &mut i32, error: &mut i32)
+    {
+        *error = *error + delta_error;
+        
+        if 2 * *error >= delta {
+            *v = *v + step;
+            *error = *error - delta;
         }
     }
     
