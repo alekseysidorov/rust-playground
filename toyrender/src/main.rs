@@ -24,6 +24,36 @@ struct Vector3D {
     z: f32,
 }
 
+struct LineRasterizer {
+    a: Point,
+    b: Point,
+    
+    x: i32,
+    y: i32,
+    
+}
+
+impl LineRasterizer {
+    pub fn new(a: Point, b: Point) -> LineRasterizer {    
+        LineRasterizer {
+            a: a, b: b,
+            x: a.x(), y: a.y()
+        }    
+    }
+
+    pub fn next(&mut self) -> bool {
+        if self.x == self.b.x() && self.y == self.b.y() {
+            self.next_point();
+            return true
+        }
+        return false
+    }
+    
+    fn next_point(&mut self) {
+        
+    }
+}
+
 impl Vector3D {
     pub fn new(x: f32, y: f32, z: f32) -> Vector3D {
         Vector3D {
@@ -145,6 +175,11 @@ impl SdlCanvas {
         self.line(a, b, color);
         self.line(b, c, color);
         self.line(c, a, color);
+        
+        // Fill top triangle part
+        for y in a.y()..b.y() {
+            
+        }
     }
     
     pub fn set_pixel(&mut self, x: i32, y: i32, color: u32) {
