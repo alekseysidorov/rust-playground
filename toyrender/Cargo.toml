@@ -5,3 +5,5 @@ authors = ["Aleksey Sidorov <gorthauer87@ya.ru>"]
 
 [dependencies]
 sdl2="*"
+log="*"
+env_logger="*"

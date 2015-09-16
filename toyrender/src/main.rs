@@ -1,7 +1,12 @@
+#[macro_use]
+extern crate log;
+extern crate env_logger;
+
+use log::LogLevel;
+
 extern crate sdl2;
 
 use std::default::Default;
-use std::mem;
 
 use std::io::prelude::*;
 use std::path::Path;
@@ -31,26 +36,67 @@ struct LineRasterizer {
     x: i32,
     y: i32,
     
+    dx: i32,    
+    dy: i32,
+    
+    sx: i32,
+    sy: i32,
+    
+    error: i32,
+    delta_error: i32,
 }
 
 impl LineRasterizer {
     pub fn new(a: Point, b: Point) -> LineRasterizer {    
-        LineRasterizer {
+        let mut line = LineRasterizer {
             a: a, b: b,
-            x: a.x(), y: a.y()
-        }    
+            x: a.x(), y: a.y(),
+            
+            dx: (b.x() - a.x()).abs(),
+            dy: (b.y() - a.y()).abs(),
+            
+            error: 0, delta_error: 0,
+            
+            sx: if b.x() - a.x() > 0 { 1 } else { -1 },
+            sy: if b.y() - a.y() > 0 { 1 } else { -1 },
+        };      
+    
+        if line.dx > line.dy {
+            line.delta_error = line.dy;
+        } else {
+            line.delta_error = line.dx;
+        }   
+        return line;
     }
 
     pub fn next(&mut self) -> bool {
-        if self.x == self.b.x() && self.y == self.b.y() {
-            self.next_point();
-            return true
+        if (self.x == self.b.x() && self.y == self.b.y()) {
+            return false
         }
-        return false
+        self.next_point();        
+        return true
     }
     
+    pub fn x(&self) -> i32 { self.x }
+    pub fn y(&self) -> i32 { self.y }
+    
     fn next_point(&mut self) {
+    
+        self.error += self.delta_error;
         
+        if self.dx > self.dy {        
+            if 2 * self.error >= self.dx {
+                self.y += self.sy;
+                self.error -= self.dx;
+            }           
+            self.x += self.sx;
+        } else {            
+            if 2 * self.error >= self.dy {
+                self.x += self.sx;
+                self.error -= self.dy;
+            }           
+            self.y += self.sy;       
+        }
     }
 }
 
@@ -123,46 +169,10 @@ impl SdlCanvas {
     
     pub fn line(&mut self, a: Point, b: Point, color: u32)
     {
-        let dx = (a.x() - b.x()).abs();
-        let dy = (a.y() - b.y()).abs();
+        let mut raster = LineRasterizer::new(a, b);
         
-        let mut x = a.x();
-        let mut y = a.y();
-
-        let sx = if b.x() - x > 0 { 1 } else { -1 };
-        let sy = if b.y() - y > 0 { 1 } else { -1 };
-        if dx > dy {
-            let rx = (b.x() - x).abs();
-            let ry = (b.y() - y).abs();
-        
-            let mut error  = 0;
-            let delta_error = ry;
-            while x != b.x() {
-                self.do_step(rx, delta_error, sy, &mut y, &mut error);           
-                self.set_pixel(x, y, color);
-                x += sx;
-            }
-        } else {
-            let rx = (b.x() - x).abs();
-            let ry = (b.y() - y).abs();
-        
-            let mut error  = 0;
-            let delta_error = rx;
-            while y != b.y() {
-                self.do_step(ry, delta_error, sx, &mut x, &mut error);            
-                self.set_pixel(x, y, color);
-                y += sy;
-            }
-        }
-    }
-    
-    fn do_step(&self, delta: i32, delta_error: i32, step: i32, v: &mut i32, error: &mut i32)
-    {
-        *error = *error + delta_error;
-        
-        if 2 * *error >= delta {
-            *v = *v + step;
-            *error = *error - delta;
+        while raster.next() {
+            self.set_pixel(raster.x(), raster.y(), color);
         }
     }
     
@@ -189,6 +199,8 @@ impl SdlCanvas {
 }
 
 pub fn main() {
+    env_logger::init().unwrap();
+
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
 
