@@ -187,8 +187,27 @@ impl SdlCanvas {
         self.line(c, a, color);
         
         // Fill top triangle part
-        for y in a.y()..b.y() {
+        let mut raster1 = LineRasterizer::new(a, b);
+        let mut raster2 = LineRasterizer::new(a, c);
+        
+        while raster1.next() {
+            raster2.next();
             
+            let a = Point::new(raster1.x(), raster1.y());
+            let b = Point::new(raster2.x(), raster2.y());
+            
+            self.line(a, b, color);
+        }
+        
+        // Fill bottom triangle part
+        let mut raster1 = LineRasterizer::new(b, c);
+        while raster2.next() {
+            raster1.next();
+            
+            let a = Point::new(raster1.x(), raster1.y());
+            let b = Point::new(raster2.x(), raster2.y());
+            
+            self.line(a, b, color);
         }
     }
     
