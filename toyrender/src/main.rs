@@ -1,10 +1,13 @@
 #[macro_use]
 extern crate log;
 extern crate env_logger;
+extern crate rand;
+extern crate sdl2;
+extern crate num;
+
+extern crate toyrender;
 
 use log::LogLevel;
-
-extern crate sdl2;
 
 use std::default::Default;
 
@@ -13,20 +16,18 @@ use std::path::Path;
 use std::fs::File;
 use std::io::BufReader;
 
+use rand::random;
+
 use sdl2::rect::Point;
 use sdl2::pixels::Color;
 use sdl2::keyboard::Keycode;
 use sdl2::render::Renderer;
 
+use toyrender::vector3d::Vector3D;
+
 struct SdlCanvas
 {
     renderer: Renderer<'static>
-}
-
-struct Vector3D {
-    x: f32,
-    y: f32,
-    z: f32,
 }
 
 struct LineRasterizer {
@@ -96,14 +97,6 @@ impl LineRasterizer {
                 self.error -= self.dy;
             }           
             self.y += self.sy;       
-        }
-    }
-}
-
-impl Vector3D {
-    pub fn new(x: f32, y: f32, z: f32) -> Vector3D {
-        Vector3D {
-            x: x, y:y, z:z
         }
     }
 }
@@ -236,31 +229,39 @@ pub fn main() {
     
     let mut canvas = SdlCanvas::new(renderer);
     
-    canvas.triangle(Point::new(100, 50), Point::new(150, 60), Point::new(120, 110), 0xFF);
-    
-    canvas.triangle(Point::new(150, 250), Point::new(350, 70), Point::new(120, 610), 0xFF00FF);
+    let light_dir = Vector3D::new(0.0, 0.0, 1.0);
 
-//     let model = Model::load_from_file("obj/african_head.obj");
-//     for face in model.faces {
-// 
-//         for i in 0..3 {
-//             let v0 = &model.verticies[face[i] as usize];
-//             let v1 = &model.verticies[face[(i+1)%3] as usize];
-// 
-//             let conv = |v : &Vector3D, w, h| {
-//                 let x = (v.x + 1.0) * w as f32 / 2.0;
-//                 let y = (v.y + 1.0) * h as f32 / 2.0;
-// 
-//                 (w as i32 - x as i32, h as i32 - y as i32)
-//             };
-// 
-//             let (x0, y0) = conv(&v0, w, h);
-//             let (x1, y1) = conv(&v1, w, h);
-// 
-//             canvas.line(Point::new(x0, y0), Point::new(x1, y1), 0xFFFFFF);
-//         }
-//     }
-// 
+    let model = Model::load_from_file("obj/african_head.obj");
+    for face in model.faces {        
+        let mut screen_coords = [Point::new(0,0); 3];
+        let mut world_coords = [Vector3D::new(0.0,0.0,0.0); 3];
+    
+        for i in 0..3 {
+            let world = model.verticies[face[i] as usize];
+            
+            screen_coords[i] = Point::new(
+                ((world.x + 1.0) * w as f32 / 2.0) as i32, 
+                h as i32 - ((world.y + 1.0) * h as f32 / 2.0) as i32, 
+            );
+            world_coords[i] = world;
+        }
+         
+        let mut n: Vector3D = (world_coords[2]-world_coords[0]) ^ (world_coords[1]-world_coords[0]);
+        n.normalize();
+        
+        let intensity = light_dir * n;
+        
+        let color = ((128.0 * intensity) as u32);
+         
+        canvas.triangle(
+            screen_coords[0],
+            screen_coords[1],
+            screen_coords[2],
+            (255.0 * intensity) as u32,
+        );
+            
+    }
+
     canvas.present();
     
     let mut running = true;
