@@ -71,7 +71,7 @@ impl LineRasterizer {
     }
 
     pub fn next(&mut self) -> bool {
-        if (self.x == self.b.x() && self.y == self.b.y()) {
+        if self.x == self.b.x() && self.y == self.b.y() {
             return false
         }
         self.next_point();        
@@ -229,9 +229,9 @@ pub fn main() {
     
     let mut canvas = SdlCanvas::new(renderer);
     
-    let light_dir = Vector3D::new(0.0, 0.0, 1.0);
+    let light_dir = Vector3D::new(0.0, 0.0, -1.0);
 
-    let model = Model::load_from_file("obj/african_head.obj");
+    let model = Model::load_from_file("obj/diablo3_pose.obj");
     for face in model.faces {        
         let mut screen_coords = [Point::new(0,0); 3];
         let mut world_coords = [Vector3D::new(0.0,0.0,0.0); 3];
@@ -250,16 +250,18 @@ pub fn main() {
         n.normalize();
         
         let intensity = light_dir * n;
-        
-        let color = ((128.0 * intensity) as u32);
-         
-        canvas.triangle(
-            screen_coords[0],
-            screen_coords[1],
-            screen_coords[2],
-            (255.0 * intensity) as u32,
-        );
-            
+
+        if intensity > 0.0 {
+            let l = (255.0 * intensity) as u32;
+            let color = l | l << 8 | l << 16;
+
+            canvas.triangle(
+                screen_coords[0],
+                screen_coords[1],
+                screen_coords[2],
+                color,
+            );
+        }
     }
 
     canvas.present();
