@@ -1,13 +1,10 @@
 #[macro_use]
 extern crate log;
 extern crate env_logger;
-extern crate rand;
 extern crate sdl2;
 extern crate num;
 
 extern crate toyrender;
-
-use log::LogLevel;
 
 use std::default::Default;
 
@@ -15,8 +12,6 @@ use std::io::prelude::*;
 use std::path::Path;
 use std::fs::File;
 use std::io::BufReader;
-
-use rand::random;
 
 use sdl2::rect::Point;
 use sdl2::pixels::Color;
@@ -31,7 +26,6 @@ struct SdlCanvas
 }
 
 struct LineRasterizer {
-    a: Point,
     b: Point,
     
     x: i32,
@@ -50,7 +44,7 @@ struct LineRasterizer {
 impl LineRasterizer {
     pub fn new(a: Point, b: Point) -> LineRasterizer {    
         let mut line = LineRasterizer {
-            a: a, b: b,
+            b: b,
             x: a.x(), y: a.y(),
             
             dx: (b.x() - a.x()).abs(),
@@ -80,6 +74,7 @@ impl LineRasterizer {
     
     pub fn x(&self) -> i32 { self.x }
     pub fn y(&self) -> i32 { self.y }
+    pub fn point(&self) -> Point { Point::new(self.x, self.y) }
     
     fn next_point(&mut self) {
     
@@ -178,30 +173,31 @@ impl SdlCanvas {
         self.line(a, b, color);
         self.line(b, c, color);
         self.line(c, a, color);
+
+        let mut fill_fn = |raster1 : &mut LineRasterizer, raster2: &mut LineRasterizer| {
+            let mut y = raster1.y();
+
+            while raster1.next() { 
+                if y != raster1.y() {
+                    y = raster1.y();
+
+                    while raster2.y() != y {
+                        raster2.next();
+                    }          
+              
+                    self.line(raster1.point(), raster2.point(), color);
+                }
+            }
+        };
         
         // Fill top triangle part
         let mut raster1 = LineRasterizer::new(a, b);
         let mut raster2 = LineRasterizer::new(a, c);
-        
-        while raster1.next() {
-            raster2.next();
-            
-            let a = Point::new(raster1.x(), raster1.y());
-            let b = Point::new(raster2.x(), raster2.y());
-            
-            self.line(a, b, color);
-        }
+        fill_fn(&mut raster1, &mut raster2);
         
         // Fill bottom triangle part
-        let mut raster1 = LineRasterizer::new(b, c);
-        while raster2.next() {
-            raster1.next();
-            
-            let a = Point::new(raster1.x(), raster1.y());
-            let b = Point::new(raster2.x(), raster2.y());
-            
-            self.line(a, b, color);
-        }
+        raster1 = LineRasterizer::new(b, c);
+        fill_fn(&mut raster1, &mut raster2);
     }
     
     pub fn set_pixel(&mut self, x: i32, y: i32, color: u32) {
@@ -231,7 +227,7 @@ pub fn main() {
     
     let light_dir = Vector3D::new(0.0, 0.0, -1.0);
 
-    let model = Model::load_from_file("obj/diablo3_pose.obj");
+    let model = Model::load_from_file("obj/african_head.obj");
     for face in model.faces {        
         let mut screen_coords = [Point::new(0,0); 3];
         let mut world_coords = [Vector3D::new(0.0,0.0,0.0); 3];
