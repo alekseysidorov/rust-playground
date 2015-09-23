@@ -1,6 +1,0 @@
-sdl/src/main.rs
-sdl/Cargo.toml
-toyrender/src/lib.rs
-toyrender/src/main.rs
-toyrender/src/vector3d.rs
-toyrender/Cargo.toml
