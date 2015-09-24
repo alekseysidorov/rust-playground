@@ -18,20 +18,22 @@ use sdl2::pixels::Color;
 use sdl2::keyboard::Keycode;
 use sdl2::render::Renderer;
 
-use toyrender::vector3d::Vector3D;
+use toyrender::vector3d::{ Vector3D, Vec3f, Vec3i };
 use toyrender::linerasterizer::LineRasterizer;
 use toyrender::pixmap::Pixmap;
 
 struct SdlCanvas
 {
-    renderer: Renderer<'static>
+    renderer: Renderer<'static>,
+    
+    z_buffer: Pixmap
 }
 
 
 
 #[derive(Default)]
 struct Model {
-    pub verticies: Vec<Vector3D>,
+    pub verticies: Vec<Vec3f>,
     pub faces: Vec<[i32; 3]>
 }
 
@@ -59,7 +61,7 @@ impl Model {
                 for i in 0..3 {
                     points[i] = words[i+1].parse::<f32>().unwrap();
                 }                
-                let v = Vector3D::new(points[0], points[1], points[2]);
+                let v = Vec3f::new(points[0], points[1], points[2]);
                 model.verticies.push(v);
             } else if line.starts_with("f ") {
                 let mut face = [-1, -1, -1];
@@ -79,8 +81,11 @@ impl Model {
 }
 
 impl SdlCanvas {
-    pub fn new(renderer: Renderer<'static>) -> SdlCanvas {
-        SdlCanvas { renderer: renderer }
+    pub fn new(renderer: Renderer<'static>, w: usize, h: usize) -> SdlCanvas {
+        SdlCanvas { 
+            renderer: renderer, 
+            z_buffer: Pixmap::new(w, h, std::i32::MIN) 
+        }
     }
     
     pub fn present(&mut self)
@@ -156,14 +161,14 @@ pub fn main() {
 
     let renderer = window.renderer().build().unwrap();
     
-    let mut canvas = SdlCanvas::new(renderer);
+    let mut canvas = SdlCanvas::new(renderer, w as usize, h as usize);
     
-    let light_dir = Vector3D::new(0.0, 0.0, -1.0);
+    let light_dir = Vec3f::new(0.0, 0.0, -1.0);
 
     let model = Model::load_from_file("obj/african_head.obj");
     for face in model.faces {        
         let mut screen_coords = [Point::new(0,0); 3];
-        let mut world_coords = [Vector3D::new(0.0,0.0,0.0); 3];
+        let mut world_coords = [Vec3f::new(0.0,0.0,0.0); 3];
     
         for i in 0..3 {
             let world = model.verticies[face[i] as usize];
@@ -175,12 +180,14 @@ pub fn main() {
             world_coords[i] = world;
         }
          
-        let mut n: Vector3D = (world_coords[2]-world_coords[0]) ^ (world_coords[1]-world_coords[0]);
-        n.normalize();
+        let mut n: Vec3f = (world_coords[2]-world_coords[0]) ^ (world_coords[1]-world_coords[0]).normalized();
         
         let intensity = light_dir * n;
 
+        println!("n: {:?}; i: {}", n, intensity);
+        
         if intensity > 0.0 {
+        
             let l = (255.0 * intensity) as u32;
             let color = l | l << 8 | l << 16;
 

@@ -7,11 +7,11 @@ use std::vec::Vec;
 pub struct Pixmap {
     w: usize,
     
-    data: Vec<u32> 
+    data: Vec<i32> 
 }
 
 impl Pixmap {
-    pub fn new(w: usize, h: usize, fill_value: u32) -> Pixmap {
+    pub fn new(w: usize, h: usize, fill_value: i32) -> Pixmap {
         let mut pixmap = Pixmap {
             w: w,
             data: Vec::new()
@@ -27,7 +27,7 @@ impl Pixmap {
 }
 
 impl Index<usize> for Pixmap {
-    type Output = [u32];
+    type Output = [i32];
 
     fn index<'a>(&'a self, _index: usize) -> &'a Self::Output {
         let i = _index*self.w;
