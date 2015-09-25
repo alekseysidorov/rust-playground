@@ -119,10 +119,12 @@ impl<T> Index<usize> for Vector3D<T> {
 }
 
 #[test]
-fn simple_test() {
+fn test_normalized() {
+    const eps: f32 = 0.001;
+
     let v1 = Vec3f::new(2.0, 2.0, 0.0);    
     let v2 = Vec3f::new(1.0, 1.0, 1.0);
     
-    assert!(v1.normalized().norm() == 1.0);
-    assert!(v2.normalized().norm() == 1.0);    
+    assert!(v1.normalized().norm() - 1.0 < eps);
+    assert!(v2.normalized().norm() - 1.0 < eps);    
 }

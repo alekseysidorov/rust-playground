@@ -102,8 +102,12 @@ impl SdlCanvas {
         }
     }
     
-    pub fn triangle(&mut self, mut a: Point, mut b: Point, mut c: Point, color: u32)
+    pub fn triangle(&mut self, mut a: Vec3f, mut b: Vec3f, mut c: Vec3f, color: u32)
     {
+        let mut a = Point::new(a.x as i32, a.y as i32);
+        let mut b = Point::new(b.x as i32, b.y as i32);
+        let mut c = Point::new(c.x as i32, c.y as i32);
+        
         if b.y() > a.y() { std::mem::swap(&mut a, &mut b); }
         if c.y() > a.y() { std::mem::swap(&mut a, &mut c); }
         if c.y() > b.y() { std::mem::swap(&mut c, &mut b); }        
@@ -152,6 +156,7 @@ pub fn main() {
 
     let w = 900;
     let h = 900;
+    let d = 255;
 
     let window = video_subsystem.window("rust-sdl2 demo: Video", w, h)
         .position_centered()
@@ -167,24 +172,22 @@ pub fn main() {
 
     let model = Model::load_from_file("obj/african_head.obj");
     for face in model.faces {        
-        let mut screen_coords = [Point::new(0,0); 3];
+        let mut screen_coords = [Vec3f::new(0.0, 0.0, 0.0); 3];
         let mut world_coords = [Vec3f::new(0.0,0.0,0.0); 3];
     
         for i in 0..3 {
             let world = model.verticies[face[i] as usize];
             
-            screen_coords[i] = Point::new(
-                ((world.x + 1.0) * w as f32 / 2.0) as i32, 
-                h as i32 - ((world.y + 1.0) * h as f32 / 2.0) as i32, 
+            screen_coords[i] = Vec3f::new(
+                ((world.x + 1.0) * w as f32 / 2.0), 
+                h as f32 - ((world.y + 1.0) * h as f32 / 2.0), 
+                world.z as f32 * d as f32
             );
             world_coords[i] = world;
         }
          
-        let mut n: Vec3f = (world_coords[2]-world_coords[0]) ^ (world_coords[1]-world_coords[0]).normalized();
-        
+        let mut n: Vec3f = ((world_coords[2]-world_coords[0]) ^ (world_coords[1]-world_coords[0])).normalized();        
         let intensity = light_dir * n;
-
-        println!("n: {:?}; i: {}", n, intensity);
         
         if intensity > 0.0 {
         
