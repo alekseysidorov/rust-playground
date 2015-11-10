@@ -2,7 +2,7 @@ extern crate num;
 extern crate log;
 
 use std::ops::BitXor;
-use std::ops::{ Sub, Index, Mul, Add };
+use std::ops::{ Sub, Index, IndexMut, Mul, Add };
 
 use num::pow;
 use num::traits::NumCast;
@@ -113,6 +113,17 @@ impl<T> Index<usize> for Vector3D<T> {
             0   => &self.x,
             1   => &self.y,
             2   => &self.z,
+            _   => panic!("Oo"),
+        }
+    }
+}
+
+impl<T> IndexMut<usize> for Vector3D<T> {
+    fn index_mut<'a>(&'a mut self, _index: usize) -> &'a mut Self::Output {
+        match _index {
+            0   => &mut self.x,
+            1   => &mut self.y,
+            2   => &mut self.z,
             _   => panic!("Oo"),
         }
     }
