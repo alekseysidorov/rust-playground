@@ -7,7 +7,7 @@ use std::ops::{ Sub, Index, IndexMut, Mul, Add };
 use num::pow;
 use num::traits::NumCast;
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Vector3D<T> {   
     pub x: T,
     pub y: T,
