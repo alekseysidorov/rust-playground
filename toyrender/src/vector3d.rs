@@ -5,7 +5,6 @@ use std::ops::BitXor;
 use std::ops::{ Sub, Index, IndexMut, Mul, Add };
 
 use num::pow;
-use num::traits::NumCast;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Vector3D<T> {   
@@ -17,22 +16,18 @@ pub struct Vector3D<T> {
 pub type Vec3i = Vector3D<i32>;
 pub type Vec3f = Vector3D<f32>;
 
-impl<T> Vector3D<T> {
+impl<T> Vector3D<T> 
+    where T: Copy + Clone 
+{
     pub fn new(x: T, y: T, z: T) -> Vector3D<T> {
         Vector3D {
             x: x, y:y, z:z
         }
     }
-}
-
-impl<T: NumCast> Vector3D<T> {
-    pub fn to<V: NumCast>(self) -> Vector3D<V> {
-        Vector3D {
-            x: NumCast::from(self.x).unwrap(),
-            y: NumCast::from(self.y).unwrap(),
-            z: NumCast::from(self.z).unwrap(),
-        }
-    }
+    
+    pub fn x(&self) -> T { self.x }
+    pub fn y(&self) -> T { self.y }
+    pub fn z(&self) -> T { self.z }    
 }
 
 impl Vector3D<f32> {

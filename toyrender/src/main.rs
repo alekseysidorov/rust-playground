@@ -13,6 +13,8 @@ use std::path::Path;
 use std::fs::File;
 use std::io::BufReader;
 
+use num::cast;
+
 use sdl2::rect::Point;
 use sdl2::pixels::Color;
 use sdl2::keyboard::Keycode;
@@ -93,20 +95,22 @@ impl SdlCanvas {
         self.renderer.present()
     }
     
-    pub fn line(&mut self, a: Point, b: Point, color: u32)
+    pub fn line(&mut self, a: Vec3i, b: Vec3i, color: u32)
     {
         let mut raster = LineRasterizer::new(a, b);
         
         while raster.next() {
-            self.set_pixel(raster.x(), raster.y(), color);
+            let p = raster.point();
+            
+            self.set_pixel(p, color);
         }
     }
     
     pub fn triangle(&mut self, mut a: Vec3f, mut b: Vec3f, mut c: Vec3f, color: u32)
     {
-        let mut a = Point::new(a.x as i32, a.y as i32);
-        let mut b = Point::new(b.x as i32, b.y as i32);
-        let mut c = Point::new(c.x as i32, c.y as i32);
+        let mut a = Vec3i::new(a.x as i32, a.y as i32, a.z as i32);
+        let mut b = Vec3i::new(b.x as i32, b.y as i32, b.z as i32);
+        let mut c = Vec3i::new(c.x as i32, c.y as i32, c.z as i32);
         
         if b.y() > a.y() { std::mem::swap(&mut a, &mut b); }
         if c.y() > a.y() { std::mem::swap(&mut a, &mut c); }
@@ -117,13 +121,13 @@ impl SdlCanvas {
         self.line(c, a, color);
 
         let mut fill_fn = |raster1 : &mut LineRasterizer, raster2: &mut LineRasterizer| {
-            let mut y = raster1.y();
+            let mut y = raster1.point().y();
 
             while raster1.next() { 
-                if y != raster1.y() {
-                    y = raster1.y();
+                if y != raster1.point().y() {
+                    y = raster1.point().y();
 
-                    while raster2.y() != y {
+                    while raster2.point().y() != y {
                         raster2.next();
                     }          
               
@@ -142,9 +146,9 @@ impl SdlCanvas {
         fill_fn(&mut raster1, &mut raster2);
     }
     
-    pub fn set_pixel(&mut self, x: i32, y: i32, color: u32) {
+    pub fn set_pixel(&mut self, v: Vec3i, color: u32) {
         self.renderer.set_draw_color(Color::RGB((color >> (8*2)) as u8, (color >> (8*1)) as u8, color as u8));
-        self.renderer.draw_point(Point::new(x, y));
+        self.renderer.draw_point(Point::new(v.x(), v.y()));
     }
 }
 
