@@ -1,6 +1,10 @@
 extern crate sdl2;
 
-//use std::ops::{ Sub, Index, Mul, Add, IndexMut };
+use sdl2::rect::Point;
+
+use std::clone::Clone;
+use std::marker::Copy;
+use std::ops::{ Sub, Index, Mul, Add, IndexMut };
 
 use num;
 use num::traits::{ Num, Zero, One };
@@ -60,14 +64,18 @@ impl LineRasterizer
 
     pub fn next(&mut self) -> bool {
         let residual_steps_base = num::abs(self.to[self.major_axis] - self.from[self.major_axis]);
+        println!("rs_base: {}", residual_steps_base);
         for i in 0..Size {
             let residual_steps = num::abs(self.to[i] - self.from[i]);
             self.delta_error[i] += residual_steps;
+            println!("\t{}: d: {}, rs: {}", i, self.delta_error[i], residual_steps);
             if i == self.major_axis || self.delta_error[i] > residual_steps_base {
                 self.from[i] += self.step[i];
+                self.delta_error[i] -= (residual_steps_base + 1)
             }
-            self.delta_error[i] -= (residual_steps_base + 1)
         }
+
+        println!("Point now {:?}", self.from);
 
         return self.has_next();
     }
