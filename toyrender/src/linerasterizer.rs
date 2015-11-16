@@ -63,6 +63,12 @@ impl LineRasterizer
     }
 
     pub fn next(&mut self) -> bool {
+        if !self.has_next() {
+            return false;
+        }
+        
+        let mut has_pending_step = [false; Size];
+    
         let residual_steps_base = num::abs(self.to[self.major_axis] - self.from[self.major_axis]);
         println!("rs_base: {}", residual_steps_base);
         for i in 0..Size {
@@ -70,13 +76,17 @@ impl LineRasterizer
             self.delta_error[i] += residual_steps;
             println!("\t{}: d: {}, rs: {}", i, self.delta_error[i], residual_steps);
             if i == self.major_axis || self.delta_error[i] > residual_steps_base {
+                has_pending_step[i] = true;
+
+            }
+        }
+        
+        for i in 0..Size {
+            if has_pending_step[i] {
                 self.from[i] += self.step[i];
                 self.delta_error[i] -= (residual_steps_base + 1)
             }
         }
-
-        println!("Point now {:?}", self.from);
-
         return self.has_next();
     }
 
@@ -122,3 +132,62 @@ impl LineRasterizer
 //         }
 //     }
 // }
+
+// #[test]
+// fn test_rasterizer_simple() {
+// 
+//     let v1 = Vec3i::new(0, 5, 10);    
+//     let v2 = Vec3i::new(15, 0, 15);
+// 
+//     let mut raster = LineRasterizer::new(v1, v2);
+//     
+//     while raster.next() {
+//         let p = raster.point();
+//     }
+//     assert_eq!(raster.point(), v2);
+// }
+// 
+// #[test]
+// fn test_rasterizer_single() {
+// 
+//     let v1 = Vec3i::new(0, 0, 0);    
+//     let v2 = Vec3i::new(25, 0, 0);
+// 
+//     let mut raster = LineRasterizer::new(v1, v2);
+//     
+//     while raster.next() {
+//         let p = raster.point();
+//     }
+//     assert_eq!(raster.point(), v2);
+// }
+
+#[test]
+fn test_rasterizer_diag() {
+
+    let v1 = Vec3i::new(0, 0, 0);    
+    let v2 = Vec3i::new(150, 150, 0);
+
+    let mut raster = LineRasterizer::new(v1, v2);
+    
+    for i in 0..152 {
+        raster.next();
+    //while raster.next() {
+        let p = raster.point();
+        println!("Point now {:?}", p);
+    }
+    assert_eq!(raster.point(), v2);
+}
+
+// #[test]
+// fn test_rasterizer_same() {
+// 
+//     let v1 = Vec3i::new(10, 15, 10);    
+//     let v2 = Vec3i::new(10, 15, 10);
+// 
+//     let mut raster = LineRasterizer::new(v1, v2);
+//     
+//     while raster.next() {
+//     }
+//     assert_eq!(raster.point(), v2);
+// }
+
