@@ -86,7 +86,7 @@ impl SdlCanvas {
     pub fn new(renderer: Renderer<'static>, w: usize, h: usize) -> SdlCanvas {
         SdlCanvas { 
             renderer: renderer, 
-            z_buffer: Pixmap::new(w, h, std::i32::MIN) 
+            z_buffer: Pixmap::new(w + 1, h + 1, std::i32::MIN) 
         }
     }
     
@@ -147,8 +147,14 @@ impl SdlCanvas {
     }
     
     pub fn set_pixel(&mut self, v: Vec3i, color: u32) {
-        self.renderer.set_draw_color(Color::RGB((color >> (8*2)) as u8, (color >> (8*1)) as u8, color as u8));
-        self.renderer.draw_point(Point::new(v.x(), v.y()));
+        let x = v.x() as usize; let y = v.y() as usize;
+        
+        if self.z_buffer[x][y] < v.z() {
+            self.z_buffer[x][y] = v.z();
+        
+            self.renderer.set_draw_color(Color::RGB((color >> (8*2)) as u8, (color >> (8*1)) as u8, color as u8));
+            self.renderer.draw_point(Point::new(v.x(), v.y()));
+        }
     }
 }
 
