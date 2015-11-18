@@ -20,7 +20,7 @@ pub struct LineRasterizer
     
     step: Vec3i,
     error: Vec3i,
-    delta_error: Vec3i,
+    d: Vec3i,
     major_axis: usize,
 }
 
@@ -38,13 +38,12 @@ impl LineRasterizer
             let d = to[i] - from[i];
             s[i] = if d > 0 { 1 } else { -1 };
             
-            if num::abs(d) > max {
+            let d = num::abs(d);
+            if d > max {
                 max = d;
                 axis = i as usize;
             };
         }
-        
-        println!("From {:?} to {:?}", from, to);
     
         LineRasterizer {
             from: from,
@@ -52,7 +51,7 @@ impl LineRasterizer
             
             step: s,
             error: n,
-            delta_error: n,
+            d: n,
             major_axis: axis
         }
     }
@@ -70,33 +69,23 @@ impl LineRasterizer
             return false;
         }
         
-        let mut has_pending_step = [false; Size];
-    
-        let mut residual_steps_base = num::abs(self.to[self.major_axis] - self.from[self.major_axis]);
-        println!("\trs_base: {}", residual_steps_base);
+        let from = self.from; let to = self.to;
+        let calc_rs = |axis| { num::abs(to[axis] - from[axis]) };
+        
+        self.from[self.major_axis] += self.step[self.major_axis];
+        
+        let rs_base = calc_rs(self.major_axis);
         for i in 0..Size {
-            let residual_steps = num::abs(self.to[i] - self.from[i]);
-            self.delta_error[i] += residual_steps;
+            let rs = calc_rs(i);
             
-            if i == self.major_axis || self.delta_error[i] >= residual_steps_base {
-                has_pending_step[i] = true;
-            }
-            
-            println!("\t\t{}: d: {}, rs: {}", i, self.delta_error[i], residual_steps);
-            
-            if self.delta_error[i] > 1000 {
-                panic!("Strange behaviour");
+            if rs > 0 && i != self.major_axis {
+                self.d[i] += rs;
+                if self.d[i] >= rs_base {
+                    self.d[i] -= rs_base;
+                    self.from[i] += self.step[i];
+                }
             }
         }
-        
-        for i in 0..Size {
-            if has_pending_step[i] {
-                self.from[i] += self.step[i];
-                self.delta_error[i] -= residual_steps_base
-            }
-        }
-        
-        println!("\tPoint now {:?}", self.from);
         return self.has_next();
     }
 
@@ -179,10 +168,7 @@ fn test_rasterizer_diag() {
 
     let mut raster = LineRasterizer::new(v1, v2);
     
-    while raster.next() {
-        let p = raster.point();
-        println!("Point now {:?}", p);
-    }
+    while raster.next() {}
     assert_eq!(raster.point(), v2);
 }
 
@@ -194,8 +180,7 @@ fn test_rasterizer_same() {
 
     let mut raster = LineRasterizer::new(v1, v2);
     
-    while raster.next() {
-    }
+    while raster.next() {}
     assert_eq!(raster.point(), v2);
 }
 
