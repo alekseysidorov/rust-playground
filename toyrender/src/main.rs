@@ -178,40 +178,60 @@ pub fn main() {
     
     let mut canvas = SdlCanvas::new(renderer, w as usize, h as usize);
     
-    let light_dir = Vec3f::new(0.0, 0.0, -1.0);
-
-    let model = Model::load_from_file("obj/african_head.obj");
-    for face in model.faces {        
-        let mut screen_coords = [Vec3f::new(0.0, 0.0, 0.0); 3];
-        let mut world_coords = [Vec3f::new(0.0,0.0,0.0); 3];
+//     canvas.triangle(
+//         Vec3f::new(10.0, 10.0, 10.0),
+//         Vec3f::new(100.0, 50.0, 150.0),
+//         Vec3f::new(30.0, 95.0, 45.0),
+//         0xff00aa
+//     );
+    canvas.triangle(
+        Vec3f::new(20.0, 30.0, 20.0),
+        Vec3f::new(40.0, 90.0, 180.0),
+        Vec3f::new(10.0, 150.0, 150.0),
+        0xffeeaa
+    );
     
-        for i in 0..3 {
-            let world = model.verticies[face[i] as usize];
-            
-            screen_coords[i] = Vec3f::new(
-                ((world.x + 1.0) * w as f32 / 2.0), 
-                h as f32 - ((world.y + 1.0) * h as f32 / 2.0), 
-                world.z as f32 * d as f32
-            );
-            world_coords[i] = world;
-        }
-         
-        let mut n: Vec3f = ((world_coords[2]-world_coords[0]) ^ (world_coords[1]-world_coords[0])).normalized();        
-        let intensity = light_dir * n;
-        
-        if intensity > 0.0 {
-        
-            let l = (255.0 * intensity) as u32;
-            let color = l | l << 8 | l << 16;
+    canvas.triangle(
+        Vec3f::new(50.0, 50.0, 0.0),
+        Vec3f::new(150.0, 50.0, 0.0),
+        Vec3f::new(70.0, 250.0, 0.0),
+        0xffdddaa
+    );
+    
+//     let light_dir = Vec3f::new(0.0, 0.0, -1.0);
 
-            canvas.triangle(
-                screen_coords[0],
-                screen_coords[1],
-                screen_coords[2],
-                color,
-            );
-        }
-    }
+//     let model = Model::load_from_file("obj/african_head.obj");
+//     for face in model.faces {        
+//         let mut screen_coords = [Vec3f::new(0.0, 0.0, 0.0); 3];
+//         let mut world_coords = [Vec3f::new(0.0,0.0,0.0); 3];
+//     
+//         for i in 0..3 {
+//             let world = model.verticies[face[i] as usize];
+//             
+//             screen_coords[i] = Vec3f::new(
+//                 ((world.x + 1.0) * w as f32 / 2.0), 
+//                 h as f32 - ((world.y + 1.0) * h as f32 / 2.0), 
+//                 world.z as f32 * d as f32
+//             );
+//             world_coords[i] = world;
+//         }
+//          
+//         let mut n: Vec3f = ((world_coords[2]-world_coords[0]) ^ (world_coords[1]-world_coords[0])).normalized();        
+//         let intensity = light_dir * n;
+//         
+//         if intensity > 0.0 {
+//         
+//             let l = (255.0 * intensity) as u32;
+//             let color = l | l << 8 | l << 16;
+// 
+//             canvas.triangle(
+//                 screen_coords[0],
+//                 screen_coords[1],
+//                 screen_coords[2],
+//                 color,
+//             );
+//         }
+//     }
 
     canvas.present();
     
