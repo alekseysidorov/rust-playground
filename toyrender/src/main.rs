@@ -13,14 +13,12 @@ use std::path::Path;
 use std::fs::File;
 use std::io::BufReader;
 
-use num::cast;
-
 use sdl2::rect::Point;
 use sdl2::pixels::Color;
 use sdl2::keyboard::Keycode;
 use sdl2::render::Renderer;
 
-use toyrender::vector3d::{ Vector3D, Vec3f, Vec3i };
+use toyrender::vector3d::{ Vec3f, Vec3i };
 use toyrender::linerasterizer::LineRasterizer;
 use toyrender::pixmap::Pixmap;
 
@@ -106,16 +104,12 @@ impl SdlCanvas {
         }
     }
     
-    pub fn triangle(&mut self, mut a: Vec3f, mut b: Vec3f, mut c: Vec3f, color: u32)
+    pub fn triangle(&mut self, mut a: Vec3i, mut b: Vec3i, mut c: Vec3i, color: u32)
     {
-        let mut a = Vec3i::new(a.x as i32, a.y as i32, a.z as i32);
-        let mut b = Vec3i::new(b.x as i32, b.y as i32, b.z as i32);
-        let mut c = Vec3i::new(c.x as i32, c.y as i32, c.z as i32);
+        if b.y() < a.y() { std::mem::swap(&mut a, &mut b); }
+        if c.y() < a.y() { std::mem::swap(&mut a, &mut c); }
+        if c.y() < b.y() { std::mem::swap(&mut c, &mut b); }       
         
-        if b.y() > a.y() { std::mem::swap(&mut a, &mut b); }
-        if c.y() > a.y() { std::mem::swap(&mut a, &mut c); }
-        if c.y() > b.y() { std::mem::swap(&mut c, &mut b); }        
-    
         self.line(a, b, color);
         self.line(b, c, color);
         self.line(c, a, color);
@@ -185,17 +179,10 @@ pub fn main() {
 //         0xff00aa
 //     );
     canvas.triangle(
-        Vec3f::new(20.0, 30.0, 20.0),
-        Vec3f::new(40.0, 90.0, 180.0),
-        Vec3f::new(10.0, 150.0, 150.0),
+        Vec3i::new(20, 30, 20),
+        Vec3i::new(40, 90, 180),
+        Vec3i::new(10, 150, 150),
         0xffeeaa
-    );
-    
-    canvas.triangle(
-        Vec3f::new(50.0, 50.0, 0.0),
-        Vec3f::new(150.0, 50.0, 0.0),
-        Vec3f::new(70.0, 250.0, 0.0),
-        0xffdddaa
     );
     
 //     let light_dir = Vec3f::new(0.0, 0.0, -1.0);

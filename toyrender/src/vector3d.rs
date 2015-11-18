@@ -43,6 +43,10 @@ impl Vector3D<f32> {
     pub fn normalized(self) -> Vector3D<f32> { 
         self * (1.0 / self.norm())
     }
+    
+    pub fn round(self) -> Vec3i {
+        Vec3i::new(self.x as i32, self.y as i32, self.z as i32)
+    }
 }
 
 impl<T: Add<Output = T>> Add for Vector3D<T> {
