@@ -147,29 +147,27 @@ fn test_rasterizer_simple() {
 }
 
 #[test]
-fn test_rasterizer_single() {
-
-    let v1 = Vec3i::new(0, 0, 0);    
-    let v2 = Vec3i::new(25, 0, 0);
-
-    let mut raster = LineRasterizer::new(v1, v2);
+fn test_rasterizer_circle() {
+    let center = Vec3i::new(450, 450, 30);
     
-    while raster.next() {
-        let p = raster.point();
+    let r = 300.0;
+    let step = 0.01;
+    
+    for a in 1..((360.0/step) as i32) {
+        use std::f32;
+    
+        let d = a as f32 * step / (2.0 * f32::consts::PI);
+        let x = center.x() as f32 + r * d.cos();
+        let y = center.y() as f32 + r * d.sin();
+        
+        let v = Vec3i::new(x as i32, y as i32, center.z());
+        
+        let mut raster = LineRasterizer::new(center, v);
+        while raster.next() {
+            let p = raster.point();
+        }
+        assert_eq!(raster.point(), v);
     }
-    assert_eq!(raster.point(), v2);
-}
-
-#[test]
-fn test_rasterizer_diag() {
-
-    let v1 = Vec3i::new(0, 0, 0);    
-    let v2 = Vec3i::new(150, 150, 0);
-
-    let mut raster = LineRasterizer::new(v1, v2);
-    
-    while raster.next() {}
-    assert_eq!(raster.point(), v2);
 }
 
 #[test]

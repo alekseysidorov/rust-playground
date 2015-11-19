@@ -97,18 +97,20 @@ impl SdlCanvas {
     {
         let mut raster = LineRasterizer::new(a, b);
         
+        self.set_pixel(a, color);
         while raster.next() {
             let p = raster.point();
             
             self.set_pixel(p, color);
         }
+        self.set_pixel(b, color); //HACK
     }
     
     pub fn triangle(&mut self, mut a: Vec3i, mut b: Vec3i, mut c: Vec3i, color: u32)
     {
-        if b.y() < a.y() { std::mem::swap(&mut a, &mut b); }
-        if c.y() < a.y() { std::mem::swap(&mut a, &mut c); }
-        if c.y() < b.y() { std::mem::swap(&mut c, &mut b); }       
+        if b.y() > a.y() { std::mem::swap(&mut a, &mut b); }
+        if c.y() > a.y() { std::mem::swap(&mut a, &mut c); }
+        if c.y() > b.y() { std::mem::swap(&mut c, &mut b); }       
         
         self.line(a, b, color);
         self.line(b, c, color);
@@ -171,13 +173,7 @@ pub fn main() {
     let renderer = window.renderer().build().unwrap();
     
     let mut canvas = SdlCanvas::new(renderer, w as usize, h as usize);
-    
-//     canvas.triangle(
-//         Vec3f::new(10.0, 10.0, 10.0),
-//         Vec3f::new(100.0, 50.0, 150.0),
-//         Vec3f::new(30.0, 95.0, 45.0),
-//         0xff00aa
-//     );
+
     canvas.triangle(
         Vec3i::new(20, 30, 20),
         Vec3i::new(40, 90, 180),
@@ -185,40 +181,60 @@ pub fn main() {
         0xffeeaa
     );
     
-//     let light_dir = Vec3f::new(0.0, 0.0, -1.0);
+    let center = Vec3i::new(150, 150, 30);
+    let r = 50.0;
+    let step = 0.1;
+    
+    let mut color = 0xff;
+    
+    for a in 1..((360.0/step) as i32) {
+        use std::f32;
+    
+        let d = a as f32 * step / (2.0 * f32::consts::PI);
+        let x = center.x() as f32 + r * d.cos();
+        let y = center.y() as f32 + r * d.sin();
+        
+        let v = Vec3i::new(x as i32, y as i32, center.z());
+        
+        canvas.line(center, v, color);
+        canvas.set_pixel(v, 0xff00aa);
+        color += 0xff;
+    }
+    
+    let light_dir = Vec3f::new(0.0, 0.0, -1.0);
 
-//     let model = Model::load_from_file("obj/african_head.obj");
-//     for face in model.faces {        
-//         let mut screen_coords = [Vec3f::new(0.0, 0.0, 0.0); 3];
-//         let mut world_coords = [Vec3f::new(0.0,0.0,0.0); 3];
-//     
-//         for i in 0..3 {
-//             let world = model.verticies[face[i] as usize];
-//             
-//             screen_coords[i] = Vec3f::new(
-//                 ((world.x + 1.0) * w as f32 / 2.0), 
-//                 h as f32 - ((world.y + 1.0) * h as f32 / 2.0), 
-//                 world.z as f32 * d as f32
-//             );
-//             world_coords[i] = world;
-//         }
-//          
-//         let mut n: Vec3f = ((world_coords[2]-world_coords[0]) ^ (world_coords[1]-world_coords[0])).normalized();        
-//         let intensity = light_dir * n;
-//         
-//         if intensity > 0.0 {
-//         
-//             let l = (255.0 * intensity) as u32;
-//             let color = l | l << 8 | l << 16;
-// 
-//             canvas.triangle(
-//                 screen_coords[0],
-//                 screen_coords[1],
-//                 screen_coords[2],
-//                 color,
-//             );
-//         }
-//     }
+    let model = Model::load_from_file("obj/african_head.obj");
+    for face in model.faces {        
+        let mut screen_coords = [Vec3f::new(0.0, 0.0, 0.0); 3];
+        let mut world_coords = [Vec3f::new(0.0,0.0,0.0); 3];
+    
+        for i in 0..3 {
+            let world = model.verticies[face[i] as usize];
+            
+            screen_coords[i] = Vec3f::new(
+                ((world.x + 1.0) * w as f32 / 2.0), 
+                h as f32 - ((world.y + 1.0) * h as f32 / 2.0), 
+                world.z as f32 * d as f32
+            );
+            world_coords[i] = world;
+        }
+         
+        let mut n: Vec3f = ((world_coords[2]-world_coords[0]) ^ (world_coords[1]-world_coords[0])).normalized();        
+        let intensity = light_dir * n;
+        
+        if intensity > 0.0 {
+        
+            let l = (255.0 * intensity) as u32;
+            let color = l | l << 8 | l << 16;
+
+            canvas.triangle(
+                screen_coords[0].round(),
+                screen_coords[1].round(),
+                screen_coords[2].round(),
+                color,
+            );
+        }
+    }
 
     canvas.present();
     
