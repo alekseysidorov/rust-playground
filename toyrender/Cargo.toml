@@ -8,5 +8,4 @@ authors = ["Aleksey Sidorov <gorthauer87@ya.ru>"]
 sdl2        =   "*"
 log         =   "*"
 env_logger  =   "*"
-rand        =   "0.3"
 num         =   "*"

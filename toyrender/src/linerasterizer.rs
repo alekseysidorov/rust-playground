@@ -1,17 +1,13 @@
 extern crate sdl2;
 
-use sdl2::rect::Point;
-
-use std::clone::Clone;
-use std::marker::Copy;
-use std::ops::{ Sub, Index, Mul, Add, IndexMut };
+//use std::ops::{ Sub, Index, Mul, Add, IndexMut };
 
 use num;
-use num::traits::{ Num, Zero, One };
+//use num::traits::{ Num, Zero, One };
 
-use vector3d::{ Vector3D, Vec3f, Vec3i };
+use vector3d::{ Vec3i };
 
-const Size: usize = 3;
+const SIZE: usize = 3;
 
 pub struct LineRasterizer
 {
@@ -19,7 +15,6 @@ pub struct LineRasterizer
     to: Vec3i,
     
     step: Vec3i,
-    error: Vec3i,
     d: Vec3i,
     major_axis: usize,
 }
@@ -32,7 +27,7 @@ impl LineRasterizer
  
         let mut axis = 0;
         let mut max = 0;
-        for i in 0..Size {
+        for i in 0..SIZE {
             n[i] = 0;
 
             let d = to[i] - from[i];
@@ -50,7 +45,6 @@ impl LineRasterizer
             to: to,
             
             step: s,
-            error: n,
             d: n,
             major_axis: axis
         }
@@ -75,7 +69,7 @@ impl LineRasterizer
         self.from[self.major_axis] += self.step[self.major_axis];
         
         let rs_base = calc_rs(self.major_axis);
-        for i in 0..Size {
+        for i in 0..SIZE {
             let rs = calc_rs(i);
             
             if rs > 0 && i != self.major_axis {
@@ -86,7 +80,7 @@ impl LineRasterizer
                 }
             }
         }
-        return self.has_next();
+        return true;
     }
 
     pub fn point(&self) -> Vec3i {
