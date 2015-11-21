@@ -95,12 +95,8 @@ impl SdlCanvas {
     
     pub fn line(&mut self, a: Vec3i, b: Vec3i, color: u32)
     {
-        let mut raster = LineRasterizer::new(a, b);
-        
         self.set_pixel(a, color);
-        while raster.next_point() {
-            let p = raster.point();
-            
+        for p in LineRasterizer::new(a, b) {
             self.set_pixel(p, color);
         }
     }
