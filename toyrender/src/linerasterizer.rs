@@ -57,7 +57,7 @@ impl LineRasterizer
         return true;
     }
 
-    pub fn next(&mut self) -> bool {
+    pub fn next_point(&mut self) -> bool {
     
         if !self.has_next() {
             return false;
@@ -88,6 +88,19 @@ impl LineRasterizer
     }
 }
 
+impl Iterator for LineRasterizer
+{
+    type Item = Vec3i;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if !self.has_next() { 
+            None
+        } else {
+            self.next_point();
+            Some(self.point())
+        }
+    }
+}
 
 // #[derive(Copy, Clone, Debug)]
 // pub struct LineRasterizer2<T> where
@@ -132,12 +145,10 @@ fn test_rasterizer_simple() {
     let v1 = Vec3i::new(0, 5, 10);    
     let v2 = Vec3i::new(15, 0, 15);
 
-    let mut raster = LineRasterizer::new(v1, v2);
-    
-    while raster.next() {
-        let p = raster.point();
-    }
-    assert_eq!(raster.point(), v2);
+    let raster = LineRasterizer::new(v1, v2);
+
+    let p = raster.last().unwrap();
+    assert_eq!(p, v2);
 }
 
 #[test]
@@ -156,11 +167,9 @@ fn test_rasterizer_circle() {
         
         let v = Vec3i::new(x as i32, y as i32, center.z());
         
-        let mut raster = LineRasterizer::new(center, v);
-        while raster.next() {
-            let p = raster.point();
-        }
-        assert_eq!(raster.point(), v);
+        let raster = LineRasterizer::new(center, v);
+        let p = raster.last().unwrap();
+        assert_eq!(p, v);
     }
 }
 
@@ -170,9 +179,9 @@ fn test_rasterizer_same() {
     let v1 = Vec3i::new(10, 15, 10);    
     let v2 = Vec3i::new(10, 15, 10);
 
-    let mut raster = LineRasterizer::new(v1, v2);
+    let raster = LineRasterizer::new(v1, v2);
     
-    while raster.next() {}
-    assert_eq!(raster.point(), v2);
+    let p = raster.last();
+    assert!(p.is_none());
 }
 

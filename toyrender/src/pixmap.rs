@@ -12,17 +12,10 @@ pub struct Pixmap {
 
 impl Pixmap {
     pub fn new(w: usize, h: usize, fill_value: i32) -> Pixmap {
-        let mut pixmap = Pixmap {
+        Pixmap {
             w: w,
-            data: Vec::new()
-        };
-        
-        //FIXME rewrite me
-        for i in 0..w*h {
-            pixmap.data.push(fill_value);
+            data: vec![fill_value; w*h]
         }
-        
-        return pixmap;
     }    
 }
 

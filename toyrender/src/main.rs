@@ -98,7 +98,7 @@ impl SdlCanvas {
         let mut raster = LineRasterizer::new(a, b);
         
         self.set_pixel(a, color);
-        while raster.next() {
+        while raster.next_point() {
             let p = raster.point();
             
             self.set_pixel(p, color);
@@ -118,12 +118,12 @@ impl SdlCanvas {
         let mut fill_fn = |raster1 : &mut LineRasterizer, raster2: &mut LineRasterizer| {
             let mut y = raster1.point().y();
 
-            while raster1.next() { 
+            while raster1.next_point() {
                 if y != raster1.point().y() {
                     y = raster1.point().y();
 
                     while raster2.point().y() != y {
-                        raster2.next();
+                        raster2.next_point();
                     }          
               
                     self.line(raster1.point(), raster2.point(), color);
