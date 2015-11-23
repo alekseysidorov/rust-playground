@@ -50,6 +50,7 @@ impl LineRasterizer
         }
     }
 
+    #[inline]
     pub fn has_next(&mut self) -> bool {
         if self.from == self.to { 
             return false;
@@ -57,6 +58,7 @@ impl LineRasterizer
         return true;
     }
 
+    #[inline]
     pub fn next_point(&mut self) -> bool {
     
         if !self.has_next() {
@@ -83,6 +85,7 @@ impl LineRasterizer
         return true;
     }
 
+    #[inline]
     pub fn point(&self) -> Vec3i {
         return self.from;
     }
@@ -92,6 +95,7 @@ impl Iterator for LineRasterizer
 {
     type Item = Vec3i;
 
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         if !self.has_next() { 
             None
@@ -139,49 +143,54 @@ impl Iterator for LineRasterizer
 //     }
 // }
 
-#[test]
-fn test_rasterizer_simple() {
-
-    let v1 = Vec3i::new(0, 5, 10);    
-    let v2 = Vec3i::new(15, 0, 15);
-
-    let raster = LineRasterizer::new(v1, v2);
-
-    let p = raster.last().unwrap();
-    assert_eq!(p, v2);
-}
-
-#[test]
-fn test_rasterizer_circle() {
-    let center = Vec3i::new(450, 450, 30);
+#[cfg(test)]
+mod tests {
+    use super::LineRasterizer;
+    use vector3d::{ Vec3i };
     
-    let r = 300.0;
-    let step = 0.01;
-    
-    for a in 1..((360.0/step) as i32) {
-        use std::f32;
-    
-        let d = a as f32 * step / (2.0 * f32::consts::PI);
-        let x = center.x() as f32 + r * d.cos();
-        let y = center.y() as f32 + r * d.sin();
-        
-        let v = Vec3i::new(x as i32, y as i32, center.z());
-        
-        let raster = LineRasterizer::new(center, v);
+    #[test]
+    fn test_rasterizer_simple() {
+
+        let v1 = Vec3i::new(0, 5, 10);    
+        let v2 = Vec3i::new(15, 0, 15);
+
+        let raster = LineRasterizer::new(v1, v2);
+
         let p = raster.last().unwrap();
-        assert_eq!(p, v);
+        assert_eq!(p, v2);
+    }
+
+    #[test]
+    fn test_rasterizer_circle() {
+        let center = Vec3i::new(450, 450, 30);
+        
+        let r = 300.0;
+        let step = 0.01;
+        
+        for a in 1..((360.0/step) as i32) {
+            use std::f32;
+        
+            let d = a as f32 * step / (2.0 * f32::consts::PI);
+            let x = center.x() as f32 + r * d.cos();
+            let y = center.y() as f32 + r * d.sin();
+            
+            let v = Vec3i::new(x as i32, y as i32, center.z());
+            
+            let raster = LineRasterizer::new(center, v);
+            let p = raster.last().unwrap();
+            assert_eq!(p, v);
+        }
+    }
+
+    #[test]
+    fn test_rasterizer_same() {
+
+        let v1 = Vec3i::new(10, 15, 10);    
+        let v2 = Vec3i::new(10, 15, 10);
+
+        let raster = LineRasterizer::new(v1, v2);
+        
+        let p = raster.last();
+        assert!(p.is_none());
     }
 }
-
-#[test]
-fn test_rasterizer_same() {
-
-    let v1 = Vec3i::new(10, 15, 10);    
-    let v2 = Vec3i::new(10, 15, 10);
-
-    let raster = LineRasterizer::new(v1, v2);
-    
-    let p = raster.last();
-    assert!(p.is_none());
-}
-
