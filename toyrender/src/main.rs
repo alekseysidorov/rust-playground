@@ -13,8 +13,8 @@ use std::path::Path;
 use std::fs::File;
 use std::io::BufReader;
 
-use sdl2::rect::Point;
-use sdl2::pixels::Color;
+use sdl2::rect::{ Rect };
+use sdl2::pixels::{ PixelFormatEnum };
 use sdl2::keyboard::Keycode;
 use sdl2::render::Renderer;
 
@@ -26,7 +26,11 @@ struct SdlCanvas
 {
     renderer: Renderer<'static>,
     
-    z_buffer: Pixmap
+    buffer: Pixmap,
+    z_buffer: Pixmap,
+    
+    width: usize,
+    height: usize
 }
 
 
@@ -84,13 +88,37 @@ impl SdlCanvas {
     pub fn new(renderer: Renderer<'static>, w: usize, h: usize) -> SdlCanvas {
         SdlCanvas { 
             renderer: renderer, 
-            z_buffer: Pixmap::new(w + 1, h + 1, std::i32::MIN) 
+            z_buffer: Pixmap::new(w + 1, h + 1, std::i32::MIN),
+            buffer: Pixmap::new(w + 1, h + 1, 0),
+            width: w, height: h
         }
     }
     
     pub fn present(&mut self)
     {
-        self.renderer.present()
+        let mut texture = self.renderer.create_texture_streaming(PixelFormatEnum::RGB24, 
+                                       (self.width as u32, self.height as u32)).unwrap();
+        texture.with_lock(None, |buffer: &mut [u8], pitch: usize| {
+            for x in 0..self.width {
+                for y in 0..self.height {
+                    let color = self.buffer[x][y];
+                    
+                    let offset = y*pitch + x*3;
+                    buffer[offset + 0] = (color >> (8*2)) as u8;
+                    buffer[offset + 1] = (color >> (8*1)) as u8;
+                    buffer[offset + 2] = color as u8;
+                }
+            }
+        }).unwrap();
+
+        self.renderer.clear();
+        self.renderer.copy(&texture, None, Some(Rect::new_unwrap(0, 0, 
+                                                self.width as u32, self.height as u32)));
+
+        self.renderer.present();
+        
+        self.z_buffer.fill(std::i32::MIN);
+        self.buffer.fill(0);
     }
     
     pub fn line(&mut self, a: Vec3i, b: Vec3i, color: u32)
@@ -142,9 +170,7 @@ impl SdlCanvas {
         
         if self.z_buffer[x][y] < v.z() {
             self.z_buffer[x][y] = v.z();
-        
-            self.renderer.set_draw_color(Color::RGB((color >> (8*2)) as u8, (color >> (8*1)) as u8, color as u8));
-            self.renderer.draw_point(Point::new(v.x(), v.y()));
+            self.buffer[x][y] = color as i32;
         }
     }
 }

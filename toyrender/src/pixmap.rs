@@ -6,6 +6,7 @@ use std::vec::Vec;
 
 pub struct Pixmap {
     w: usize,
+    h: usize,
     
     data: Vec<i32> 
 }
@@ -14,14 +15,20 @@ impl Pixmap {
     pub fn new(w: usize, h: usize, fill_value: i32) -> Pixmap {
         Pixmap {
             w: w,
+            h: h,
             data: vec![fill_value; w*h]
         }
-    }    
+    }
+    
+    pub fn fill(&mut self, fill_value: i32) {
+        self.data = vec![fill_value; self.w*self.h]
+    } 
 }
 
 impl Index<usize> for Pixmap {
     type Output = [i32];
 
+    #[inline]
     fn index<'a>(&'a self, _index: usize) -> &'a Self::Output {
         let i = _index*self.w;
         
@@ -30,6 +37,7 @@ impl Index<usize> for Pixmap {
 }
 
 impl IndexMut<usize> for Pixmap {
+    #[inline]
     fn index_mut<'a>(&'a mut self, _index: usize) -> &'a mut Self::Output {
         let i = _index*self.w;
         
