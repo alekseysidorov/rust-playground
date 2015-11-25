@@ -21,6 +21,7 @@ use sdl2::render::Renderer;
 use toyrender::vector3d::{ Vec3f, Vec3i };
 use toyrender::linerasterizer::LineRasterizer;
 use toyrender::pixmap::Pixmap;
+use toyrender::tgaimage::{ ImageLoader, TgaImage };
 
 struct SdlCanvas
 {
@@ -196,7 +197,7 @@ pub fn main() {
     let mut canvas = SdlCanvas::new(renderer, w as usize, h as usize);
     
     let light_dir = Vec3f::new(0.0, 0.0, -1.0);
-    let model = Model::load_from_file("obj/african_head.obj");
+    let model = Model::load_from_file("obj/african/african_head.obj");
     for face in model.faces {        
         let mut screen_coords = [Vec3f::new(0.0, 0.0, 0.0); 3];
         let mut world_coords = [Vec3f::new(0.0,0.0,0.0); 3];
@@ -226,6 +227,13 @@ pub fn main() {
                 screen_coords[2].round(),
                 color,
             );
+        }
+    }
+    
+    let diffuse = TgaImage::load("obj/african/african_head_diffuse.tga").unwrap();
+    for x in 0..w as usize {
+        for y in 0..h as usize {
+            canvas.set_pixel(Vec3i::new(x as i32, y as i32, -100), diffuse[x][y] as u32);
         }
     }
 

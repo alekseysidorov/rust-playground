@@ -6,3 +6,4 @@ extern crate log;
 pub mod vector3d; 
 pub mod linerasterizer;
 pub mod pixmap;
+pub mod tgaimage;

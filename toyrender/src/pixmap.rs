@@ -23,6 +23,9 @@ impl Pixmap {
     pub fn fill(&mut self, fill_value: i32) {
         self.data = vec![fill_value; self.w*self.h]
     } 
+    
+    pub fn width(&self) -> usize { self.w }
+    pub fn height(&self) -> usize { self.h }
 }
 
 impl Index<usize> for Pixmap {
