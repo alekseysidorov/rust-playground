@@ -7,3 +7,4 @@ pub mod vector3d;
 pub mod linerasterizer;
 pub mod pixmap;
 pub mod tgaimage;
+pub mod model;

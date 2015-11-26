@@ -6,13 +6,6 @@ extern crate num;
 
 extern crate toyrender;
 
-use std::default::Default;
-
-use std::io::prelude::*;
-use std::path::Path;
-use std::fs::File;
-use std::io::BufReader;
-
 use sdl2::rect::{ Rect };
 use sdl2::pixels::{ PixelFormatEnum };
 use sdl2::keyboard::Keycode;
@@ -21,7 +14,7 @@ use sdl2::render::Renderer;
 use toyrender::vector3d::{ Vec3f, Vec3i };
 use toyrender::linerasterizer::LineRasterizer;
 use toyrender::pixmap::Pixmap;
-use toyrender::tgaimage::{ ImageLoader, TgaImage };
+use toyrender::model::{ Loader };
 
 struct SdlCanvas
 {
@@ -32,57 +25,6 @@ struct SdlCanvas
     
     width: usize,
     height: usize
-}
-
-
-
-#[derive(Default)]
-struct Model {
-    pub verticies: Vec<Vec3f>,
-    pub faces: Vec<[i32; 3]>
-}
-
-impl Model {
-    pub fn new() -> Model {
-        Model {
-            ..Default::default()
-        }
-    }
-
-    pub fn load_from_file(file_path: &str) -> Model {
-        let path = Path::new(file_path);
-        let file = BufReader::new(File::open(&path).unwrap());
-
-        let mut model = Model::new();
-
-        for line in file.lines() {
-            let line = line.unwrap();
-
-            let words: Vec<&str>;
-            words = line.split_whitespace().collect();
-            if line.starts_with("v ") {
-                
-                let mut points : [f32; 3] = [ 0.0, 0.0, 0.0 ];
-                for i in 0..3 {
-                    points[i] = words[i+1].parse::<f32>().unwrap();
-                }                
-                let v = Vec3f::new(points[0], points[1], points[2]);
-                model.verticies.push(v);
-            } else if line.starts_with("f ") {
-                let mut face = [-1, -1, -1];
-
-                for i in 0..3 {
-                    let mut words = words[i+1].split("/");
-                    face[i] = words.next().unwrap().parse::<i32>().unwrap();
-                    face[i] -= 1;
-                }
-                model.faces.push(face);
-
-            }
-        }
-
-        return model;
-    }
 }
 
 impl SdlCanvas {
@@ -197,7 +139,9 @@ pub fn main() {
     let mut canvas = SdlCanvas::new(renderer, w as usize, h as usize);
     
     let light_dir = Vec3f::new(0.0, 0.0, -1.0);
-    let model = Model::load_from_file("obj/african/african_head.obj");
+    let model = Loader::from_files("obj/african/african_head.obj",
+                                   "obj/african/african_head_diffuse.tga").unwrap();
+
     for face in model.faces {        
         let mut screen_coords = [Vec3f::new(0.0, 0.0, 0.0); 3];
         let mut world_coords = [Vec3f::new(0.0,0.0,0.0); 3];
@@ -229,14 +173,6 @@ pub fn main() {
             );
         }
     }
-    
-    let diffuse = TgaImage::load("obj/african/african_head_diffuse.tga").unwrap();
-    for x in 0..w as usize {
-        for y in 0..h as usize {
-            canvas.set_pixel(Vec3i::new(x as i32, y as i32, -100), diffuse[x][y] as u32);
-        }
-    }
-
     canvas.present();
     
     let mut running = true;

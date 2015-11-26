@@ -3,7 +3,7 @@ use std::ops::{Index, IndexMut};
 use std::vec::Vec;
 
 //TODO error handling
-
+#[derive(Default)]
 pub struct Pixmap {
     w: usize,
     h: usize,
