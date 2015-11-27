@@ -103,6 +103,54 @@ impl SdlCanvas {
         raster1 = LineRasterizer::new(b, c);
         fill_fn(&mut raster1, &mut raster2);
     }
+
+    pub fn textured_triangle(&mut self, mut a: Vec3i, mut b: Vec3i, mut c: Vec3i,
+                             mut uv0: Vec3i, mut uv1: Vec3i, mut uv2: Vec3i,
+                             intensity: f32, diffuse: &Pixmap)
+    {
+        if b.y() > a.y() { std::mem::swap(&mut a, &mut b); }
+        if c.y() > a.y() { std::mem::swap(&mut a, &mut c); }
+        if c.y() > b.y() { std::mem::swap(&mut c, &mut b); }
+        let alpha_step = 1.0 / (c.y - a.y) as f32;
+        let mut alpha: f32 = 0.0;
+
+        let mut fill_fn = |raster1 : &mut LineRasterizer, raster2: &mut LineRasterizer| {
+            let mut y = raster1.point().y();
+
+            let seg_height = raster2.end_point().y() - raster1.end_point().y();
+            let beta_step = 1.0 / seg_height as f32;
+
+            let mut beta = 0.0;
+            while raster1.next_point() {
+                if y != raster1.point().y() {
+                    y = raster1.point().y();
+
+                    while raster2.point().y() != y {
+                        raster2.next_point();
+                    }
+
+                    let p0 = raster1.point();
+                    let p1 = raster2.point();
+
+                    let total_width = num::abs(a.x() - b.x());
+
+                    self.line(raster1.point(), raster2.point(), 0);
+
+                    alpha += alpha_step;
+                    beta += beta_step;
+                }
+            }
+        };
+
+        // Fill top triangle part
+        let mut raster1 = LineRasterizer::new(a, b);
+        let mut raster2 = LineRasterizer::new(a, c);
+        fill_fn(&mut raster1, &mut raster2);
+
+        // Fill bottom triangle part
+        raster1 = LineRasterizer::new(b, c);
+        fill_fn(&mut raster1, &mut raster2);
+    }
     
     pub fn set_pixel(&mut self, v: Vec3i, color: u32) {
         let x = v.x() as usize; let y = v.y() as usize;

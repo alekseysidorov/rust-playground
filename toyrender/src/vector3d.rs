@@ -3,6 +3,7 @@ extern crate log;
 
 use std::ops::BitXor;
 use std::ops::{ Sub, Index, IndexMut, Mul, Add };
+use num::traits::NumCast;
 
 use num::pow;
 
@@ -124,6 +125,16 @@ impl<T> IndexMut<usize> for Vector3D<T> {
             1   => &mut self.y,
             2   => &mut self.z,
             _   => panic!("Oo"),
+        }
+    }
+}
+
+impl<T: NumCast> Vector3D<T> {
+    pub fn to<V: NumCast>(self) -> Vector3D<V> {
+        Vector3D {
+            x: NumCast::from(self.x).unwrap(),
+            y: NumCast::from(self.y).unwrap(),
+            z: NumCast::from(self.z).unwrap(),
         }
     }
 }

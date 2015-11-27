@@ -89,6 +89,11 @@ impl LineRasterizer
     pub fn point(&self) -> Vec3i {
         return self.from;
     }
+
+    #[inline]
+    pub fn end_point(&self) -> Vec3i {
+        return self.to;
+    }
 }
 
 impl Iterator for LineRasterizer
