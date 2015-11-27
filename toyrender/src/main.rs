@@ -77,10 +77,6 @@ impl SdlCanvas {
         if b.y() > a.y() { std::mem::swap(&mut a, &mut b); }
         if c.y() > a.y() { std::mem::swap(&mut a, &mut c); }
         if c.y() > b.y() { std::mem::swap(&mut c, &mut b); }       
-        
-        self.line(a, b, color);
-        self.line(b, c, color);
-        self.line(c, a, color);
 
         let mut fill_fn = |raster1 : &mut LineRasterizer, raster2: &mut LineRasterizer| {
             let mut y = raster1.point().y();
@@ -142,7 +138,9 @@ pub fn main() {
     let model = Loader::from_files("obj/african/african_head.obj",
                                    "obj/african/african_head_diffuse.tga").unwrap();
 
-    for face in model.faces {        
+    for i in 0..model.faces.len() {
+        let face = model.faces[i];
+
         let mut screen_coords = [Vec3f::new(0.0, 0.0, 0.0); 3];
         let mut world_coords = [Vec3f::new(0.0,0.0,0.0); 3];
     
@@ -161,16 +159,13 @@ pub fn main() {
         let intensity = light_dir * n;
         
         if intensity > 0.0 {
-        
             let l = (255.0 * intensity) as u32;
             let color = l | l << 8 | l << 16;
-
             canvas.triangle(
                 screen_coords[0].round(),
                 screen_coords[1].round(),
                 screen_coords[2].round(),
-                color,
-            );
+                color);
         }
     }
     canvas.present();
