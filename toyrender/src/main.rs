@@ -147,7 +147,7 @@ pub fn main() {
         let mut world_coords = [Vec3f::new(0.0,0.0,0.0); 3];
     
         for i in 0..3 {
-            let world = model.verticies[face[i] as usize];
+            let world = model.verticies[face[i][0] as usize];
             
             screen_coords[i] = Vec3f::new(
                 ((world.x + 1.0) * w as f32 / 2.0), 

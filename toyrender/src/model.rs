@@ -5,24 +5,33 @@ use std::path::Path;
 
 use pixmap::Pixmap;
 use tgaimage::{ ImageLoader, TgaImage };
-use vector3d::{ Vec3f };
+use vector3d::{ Vec3f, Vec3i };
 
 pub type Result<T> = io::Result<T>;
 
+#[derive(Default)]
 pub struct Model {
     pub verticies: Vec<Vec3f>,
-    pub faces: Vec<[i32; 3]>,
-    pub diffuse: Pixmap
+    pub faces: Vec<[Vec3i; 3]>,
+    pub diffuse: Pixmap,
+    pub uv: Vec<[f32; 2]>
 }
 
 impl Model {
     fn new() -> Model {
         Model {
-            verticies: Vec::new(),
-            faces: Vec::new(),
-            diffuse: Pixmap::new(0, 0, 0)
+            ..Default::default()
         }
     }
+    
+    pub fn uv(&self, iface: usize, nvert: usize) -> Vec3i {
+        let idx = self.faces[iface][nvert][1] as usize;
+        let v = Vec3f::new(self.uv[idx][0] * self.diffuse.width() as f32, 
+                           self.uv[idx][1] * self.diffuse.height() as f32, 
+                           0.0);
+        v.round()
+    }
+
 }
 
 pub struct Loader; //TODO
@@ -56,14 +65,19 @@ impl Loader {
                 let v = Vec3f::new(points[0], points[1], points[2]);
                 model.verticies.push(v);
             } else if line.starts_with("f ") {
-                let mut face = [-1, -1, -1];
-
+                let mut face: [Vec3i; 3] = [Vec3i::new(-1, -1, -1); 3];
+                let words: Vec<&str> = line.split_whitespace().collect();
                 for i in 0..3 {
-                    let mut words = words[i+1].split("/");
-                    face[i] = words.next().unwrap().parse::<i32>().unwrap();
-                    face[i] -= 1;
+                    let mut j = 0;
+                    for num in words[i+1].split("/") {
+                        face[i][j] = num.parse::<i32>().unwrap() - 1;
+                        j += 1;
+                    } 
                 }
                 model.faces.push(face);
+            } else if line.starts_with("vt ") {
+                let w: Vec<&str> = line.split_whitespace().collect();
+                model.uv.push([w[1].parse().unwrap(), w[2].parse().unwrap()]); //FIXME remove unwraps
             }
         }
         Ok(model)
