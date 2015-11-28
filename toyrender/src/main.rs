@@ -129,32 +129,36 @@ impl SdlCanvas {
         }
 
         let total_height = p2.y - p0.y;
-        //println!("th: {}", total_height);
+
+        let alpha_step = 1.0 / total_height as f64;
+        let mut alpha: f64 = 0.0;
+
         for i in 0..total_height {
             let second_half = i > p1.y - p0.y || p1.y == p0.y;
             let segment_height = if second_half { p2.y - p1.y } else { p1.y - p0.y };
-            let alpha = i as f32/total_height as f32;
+            
             let beta  = (i - if second_half { p1.y - p0.y } else { 0 }) as f32/segment_height as f32; // be careful: with above conditions no division by zero here
-            let mut a = p0.to::<f32>() + (p2-p0).to::<f32>()*alpha;
+            let mut a = p0.to::<f32>() + (p2-p0).to::<f32>()*alpha as f32;
             let mut b = if second_half { p1.to::<f32>() + (p2-p1).to::<f32>()*beta } else { p0.to::<f32>() + (p1-p0).to::<f32>()*beta };
-            let mut auv = uv0.to::<f32>() + (uv2-uv0).to::<f32>()*alpha;
+            let mut auv = uv0.to::<f32>() + (uv2-uv0).to::<f32>()*alpha as f32;
             let mut buv = if second_half { uv1.to::<f32>() + (uv2-uv1).to::<f32>()*beta } else { uv0.to::<f32>() + (uv1-uv0).to::<f32>()*beta };
             if a.x>b.x{
                 std::mem::swap(&mut a, &mut b);
                 std::mem::swap(&mut auv, &mut buv);
             }
 
-            //println!("from {:?} to {:?}", a, b);
             for j in a.x as i32..b.x as i32+1 {
                 let phi = if b.x == a.x { 1. } else { (j as f32 - a.x)/(b.x - a.x) };
                 let p = (a + (b-a)*phi).to::<i32>();
                 let puv = (auv + (buv-auv)*phi).to::<i32>();
 
-                if self.z_buffer[p.x as usize][p.y as usize]<p.z { 
+                if self.z_buffer[p.x as usize][p.y as usize]<p.z {
                     self.z_buffer[p.x as usize][p.y as usize] = p.z;
                     self.buffer[p.x as usize][p.y as usize] = get_gray(diffuse.get(puv.x, puv.y), intensity);
                 }
             }
+
+            alpha += alpha_step;
         }
     }
     
