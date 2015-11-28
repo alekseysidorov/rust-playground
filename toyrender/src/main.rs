@@ -104,6 +104,78 @@ impl SdlCanvas {
         fill_fn(&mut raster1, &mut raster2);
     }
 
+    pub fn textured_triangle_raster(&mut self, mut p0: Vec3i, mut p1: Vec3i, mut p2: Vec3i,
+                                    mut uv0: Vec3i, mut uv1: Vec3i, mut uv2: Vec3i,
+                                    intensity: f32, diffuse: &Pixmap)
+    {
+        let get_gray = |color: i32, intensity: f32| -> i32 {
+            let mut result = ((color as u8) as f32*intensity) as u32;
+            result += (((color >> 8) as u8) as f32*intensity) as u32*256;
+            result += (((color >> 16) as u8) as f32*intensity) as u32*256*256;
+            return result as i32;
+        };
+
+        if p0.y > p1.y {
+            std::mem::swap(&mut p0, &mut p1);
+            std::mem::swap(&mut uv0, &mut uv1);
+        }
+        if p0.y > p2.y {
+            std::mem::swap(&mut p0, &mut p2);
+            std::mem::swap(&mut uv0, &mut uv2);
+        }
+        if p1.y > p2.y {
+            std::mem::swap(&mut p1, &mut p2);
+            std::mem::swap(&mut uv1, &mut uv2);
+        }
+
+        let alpha_step = 1.0 / (p2.y - p0.y) as f64;
+        let mut alpha: f64 = 0.0;
+
+        let dp = (p2-p0).to::<f32>();
+        let duv = (uv2-uv0).to::<f32>();
+        let mut raster2 = LineRasterizer::new(p0, p2);
+        let mut raster_fn = |v0: Vec3i, v1: Vec3i, uuv0: Vec3i, uuv1: Vec3i| {
+            let mut raster1 = LineRasterizer::new(v0, v1);
+
+            let beta_step = 1.0 / (v1.y - v0.y) as f64;
+            let mut beta = 0.0;
+            let duuv = (uuv1-uuv0).to::<f32>();
+
+            let mut y = raster1.point().y();
+            while raster1.next_point() {
+                if y != raster1.point().y() {
+                    y = raster1.point().y();
+                    while raster2.point().y() != y {
+                        raster2.next_point();
+                    }
+
+                    let mut auv = uv0.to::<f32>() + duv*alpha as f32;
+                    let mut buv = uuv0.to::<f32>() + duuv*beta as f32;
+
+                    let a = raster1.point();
+                    let b = raster2.point();
+                    let mut phi = 0.0;
+                    let phi_step = 1.0 / (b.x - a.x) as f64;
+                    for p in LineRasterizer::new(a, b) {
+                        let puv = (auv + (buv-auv)*phi as f32).to::<i32>();
+
+                        if self.z_buffer[p.x as usize][p.y as usize] < p.z {
+                            self.z_buffer[p.x as usize][p.y as usize] = p.z;
+                            self.buffer[p.x as usize][p.y as usize] = get_gray(diffuse.get(puv.x, puv.y), intensity);
+                        }
+                        phi += phi_step;
+                    }
+
+                    alpha += alpha_step;
+                    beta += beta_step;
+                }
+            }
+        };
+
+        raster_fn(p0, p1, uv0, uv1);
+        raster_fn(p1, p2, uv1, uv2);
+    }
+
     pub fn textured_triangle(&mut self, mut p0: Vec3i, mut p1: Vec3i, mut p2: Vec3i,
                              mut uv0: Vec3i, mut uv1: Vec3i, mut uv2: Vec3i,
                              intensity: f32, diffuse: &Pixmap)
@@ -140,12 +212,13 @@ impl SdlCanvas {
             let segment_height = v1.y - v0.y;
             let beta_step = 1.0 / segment_height as f64;
             let mut beta = 0.0;
+            let duuv = (uuv1-uuv0).to::<f32>();
             for i in 0..segment_height {
                 let mut a = p0.to::<f32>() + dp*alpha as f32;
                 let mut auv = uv0.to::<f32>() + duv*alpha as f32;
 
                 let mut b = v0.to::<f32>() + (v1-v0).to::<f32>()*beta as f32;
-                let mut buv = uuv0.to::<f32>() + (uuv1-uuv0).to::<f32>()*beta as f32;
+                let mut buv = uuv0.to::<f32>() + duuv*beta as f32;
 
                 if a.x>b.x {
                     std::mem::swap(&mut a, &mut b);
@@ -236,7 +309,7 @@ pub fn main() {
             //    screen_coords[2].round(),
             //    color);
 
-            canvas.textured_triangle(screen_coords[0].to::<i32>(),
+            canvas.textured_triangle_raster(screen_coords[0].to::<i32>(),
                                      screen_coords[1].to::<i32>(),
                                      screen_coords[2].to::<i32>(),
                                      model.uv(i, 0),
