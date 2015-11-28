@@ -152,8 +152,14 @@ impl SdlCanvas {
                     let mut auv = uv0 + duv*alpha as f32;
                     let mut buv = uuv0 + duuv*beta as f32;
 
-                    let a = raster1.point();
-                    let b = raster2.point();
+                    let mut a = raster1.point();
+                    let mut b = raster2.point();
+
+                    if a.x>b.x {
+                        std::mem::swap(&mut a, &mut b);
+                        std::mem::swap(&mut auv, &mut buv);
+                    }
+
                     let mut phi = 0.0;
                     let phi_step = 1.0 / (b.x - a.x) as f64;
                     for p in LineRasterizer::new(a, b) {
