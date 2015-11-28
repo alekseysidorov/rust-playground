@@ -105,7 +105,7 @@ impl SdlCanvas {
     }
 
     pub fn textured_triangle_raster(&mut self, mut p0: Vec3i, mut p1: Vec3i, mut p2: Vec3i,
-                                    mut uv0: Vec3i, mut uv1: Vec3i, mut uv2: Vec3i,
+                                    mut uv0: Vec3f, mut uv1: Vec3f, mut uv2: Vec3f,
                                     intensity: f32, diffuse: &Pixmap)
     {
         let get_gray = |color: i32, intensity: f32| -> i32 {
@@ -132,14 +132,14 @@ impl SdlCanvas {
         let mut alpha: f64 = 0.0;
 
         let dp = (p2-p0).to::<f32>();
-        let duv = (uv2-uv0).to::<f32>();
+        let duv = (uv2-uv0);
         let mut raster2 = LineRasterizer::new(p0, p2);
-        let mut raster_fn = |v0: Vec3i, v1: Vec3i, uuv0: Vec3i, uuv1: Vec3i| {
+        let mut raster_fn = |v0: Vec3i, v1: Vec3i, uuv0: Vec3f, uuv1: Vec3f| {
             let mut raster1 = LineRasterizer::new(v0, v1);
 
             let beta_step = 1.0 / (v1.y - v0.y) as f64;
             let mut beta = 0.0;
-            let duuv = (uuv1-uuv0).to::<f32>();
+            let duuv = (uuv1-uuv0);
 
             let mut y = raster1.point().y();
             while raster1.next_point() {
@@ -149,8 +149,8 @@ impl SdlCanvas {
                         raster2.next_point();
                     }
 
-                    let mut auv = uv0.to::<f32>() + duv*alpha as f32;
-                    let mut buv = uuv0.to::<f32>() + duuv*beta as f32;
+                    let mut auv = uv0 + duv*alpha as f32;
+                    let mut buv = uuv0 + duuv*beta as f32;
 
                     let a = raster1.point();
                     let b = raster2.point();
@@ -177,7 +177,7 @@ impl SdlCanvas {
     }
 
     pub fn textured_triangle(&mut self, mut p0: Vec3i, mut p1: Vec3i, mut p2: Vec3i,
-                             mut uv0: Vec3i, mut uv1: Vec3i, mut uv2: Vec3i,
+                             mut uv0: Vec3f, mut uv1: Vec3f, mut uv2: Vec3f,
                              intensity: f32, diffuse: &Pixmap)
     {
         let get_gray = |color: i32, intensity: f32| -> i32 {
@@ -206,8 +206,8 @@ impl SdlCanvas {
         let mut alpha: f64 = 0.0;
 
         let dp = (p2-p0).to::<f32>();
-        let duv = (uv2-uv0).to::<f32>();
-        let mut segment_fn = |v0: Vec3i, v1: Vec3i, uuv0: Vec3i, uuv1: Vec3i| {
+        let duv = (uv2-uv0);
+        let mut segment_fn = |v0: Vec3i, v1: Vec3i, uuv0: Vec3f, uuv1: Vec3f| {
             // only first half
             let segment_height = v1.y - v0.y;
             let beta_step = 1.0 / segment_height as f64;
@@ -215,10 +215,10 @@ impl SdlCanvas {
             let duuv = (uuv1-uuv0).to::<f32>();
             for i in 0..segment_height {
                 let mut a = p0.to::<f32>() + dp*alpha as f32;
-                let mut auv = uv0.to::<f32>() + duv*alpha as f32;
+                let mut auv = uv0 + duv*alpha as f32;
 
                 let mut b = v0.to::<f32>() + (v1-v0).to::<f32>()*beta as f32;
-                let mut buv = uuv0.to::<f32>() + duuv*beta as f32;
+                let mut buv = uuv0 + duuv*beta as f32;
 
                 if a.x>b.x {
                     std::mem::swap(&mut a, &mut b);

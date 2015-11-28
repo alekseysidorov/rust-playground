@@ -24,12 +24,12 @@ impl Model {
         }
     }
     
-    pub fn uv(&self, iface: usize, nvert: usize) -> Vec3i {
+    pub fn uv(&self, iface: usize, nvert: usize) -> Vec3f {
         let idx = self.faces[iface][nvert][1] as usize;
-        let v = Vec3f::new(self.uv[idx][0] * self.diffuse.width() as f32, 
+
+        Vec3f::new(self.uv[idx][0] * self.diffuse.width() as f32,
                            self.uv[idx][1] * self.diffuse.height() as f32, 
-                           0.0);
-        v.to::<i32>()
+                           0.0)
     }
 
 }
