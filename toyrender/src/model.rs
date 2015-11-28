@@ -29,7 +29,7 @@ impl Model {
         let v = Vec3f::new(self.uv[idx][0] * self.diffuse.width() as f32, 
                            self.uv[idx][1] * self.diffuse.height() as f32, 
                            0.0);
-        v.round()
+        v.to::<i32>()
     }
 
 }

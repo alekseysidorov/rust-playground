@@ -104,62 +104,58 @@ impl SdlCanvas {
         fill_fn(&mut raster1, &mut raster2);
     }
 
-    pub fn textured_triangle(&mut self, mut a: Vec3i, mut b: Vec3i, mut c: Vec3i,
+    pub fn textured_triangle(&mut self, mut p0: Vec3i, mut p1: Vec3i, mut p2: Vec3i,
                              mut uv0: Vec3i, mut uv1: Vec3i, mut uv2: Vec3i,
                              intensity: f32, diffuse: &Pixmap)
     {
-        let get_gray = |color: u32, intensity: f32| -> u32 {
+        let get_gray = |color: i32, intensity: f32| -> i32 {
             let mut result = ((color as u8) as f32*intensity) as u32;
             result += (((color >> 8) as u8) as f32*intensity) as u32*256;
             result += (((color >> 16) as u8) as f32*intensity) as u32*256*256;
-            return result;
+            return result as i32;
         };
 
-        if b.y() > a.y() {
-            std::mem::swap(&mut a, &mut b);
+        if p0.y > p1.y {
+            std::mem::swap(&mut p0, &mut p1);
             std::mem::swap(&mut uv0, &mut uv1);
         }
-        if c.y() > a.y() {
-            std::mem::swap(&mut a, &mut c);
+        if p0.y > p2.y {
+            std::mem::swap(&mut p0, &mut p2);
             std::mem::swap(&mut uv0, &mut uv2);
         }
-        if c.y() > b.y() {
-            std::mem::swap(&mut c, &mut b);
-            std::mem::swap(&mut uv2, &mut uv1);
+        if p1.y > p2.y {
+            std::mem::swap(&mut p1, &mut p2);
+            std::mem::swap(&mut uv1, &mut uv2);
         }
 
-        let alpha_step = 1.0 / (c.y - a.y) as f32;
-        let mut alpha: f32 = 0.0;
-        let mut fill_fn = |raster1 : &mut LineRasterizer, raster2: &mut LineRasterizer| {
-            let mut y = raster1.point().y();
+        let total_height = p2.y - p0.y;
+        //println!("th: {}", total_height);
+        for i in 0..total_height {
+            let second_half = i > p1.y - p0.y || p1.y == p0.y;
+            let segment_height = if second_half { p2.y - p1.y } else { p1.y - p0.y };
+            let alpha = i as f32/total_height as f32;
+            let beta  = (i - if second_half { p1.y - p0.y } else { 0 }) as f32/segment_height as f32; // be careful: with above conditions no division by zero here
+            let mut a = p0.to::<f32>() + (p2-p0).to::<f32>()*alpha;
+            let mut b = if second_half { p1.to::<f32>() + (p2-p1).to::<f32>()*beta } else { p0.to::<f32>() + (p1-p0).to::<f32>()*beta };
+            let mut auv = uv0.to::<f32>() + (uv2-uv0).to::<f32>()*alpha;
+            let mut buv = if second_half { uv1.to::<f32>() + (uv2-uv1).to::<f32>()*beta } else { uv0.to::<f32>() + (uv1-uv0).to::<f32>()*beta };
+            if a.x>b.x{
+                std::mem::swap(&mut a, &mut b);
+                std::mem::swap(&mut auv, &mut buv);
+            }
 
-            let seg_height = raster2.end_point().y() - raster1.end_point().y();
-            let beta_step = 1.0 / seg_height as f32;
-            let mut beta = 0.0;
-            while raster1.next_point() {
-                if y != raster1.point().y() {
-                    y = raster1.point().y();
+            //println!("from {:?} to {:?}", a, b);
+            for j in a.x as i32..b.x as i32+1 {
+                let phi = if b.x == a.x { 1. } else { (j as f32 - a.x)/(b.x - a.x) };
+                let p = (a + (b-a)*phi).to::<i32>();
+                let puv = (auv + (buv-auv)*phi).to::<i32>();
 
-                    while raster2.point().y() != y {
-                        raster2.next_point();
-                    }
-
-                    self.line(raster1.point(), raster2.point(), get_gray(0xffffff, intensity));
-
-                    alpha += alpha_step;
-                    beta += beta_step;
+                if self.z_buffer[p.x as usize][p.y as usize]<p.z { 
+                    self.z_buffer[p.x as usize][p.y as usize] = p.z;
+                    self.buffer[p.x as usize][p.y as usize] = get_gray(diffuse.get(puv.x, puv.y), intensity);
                 }
             }
-        };
-
-        // Fill top triangle part
-        let mut raster1 = LineRasterizer::new(a, b);
-        let mut raster2 = LineRasterizer::new(a, c);
-        fill_fn(&mut raster1, &mut raster2);
-
-        // Fill bottom triangle part
-        raster1 = LineRasterizer::new(b, c);
-        fill_fn(&mut raster1, &mut raster2);
+        }
     }
     
     pub fn set_pixel(&mut self, v: Vec3i, color: u32) {
@@ -238,6 +234,8 @@ pub fn main() {
         }
     }
     canvas.present();
+
+    println!("Canvas presented");
     
     let mut running = true;
     let mut event_pump = sdl_context.event_pump().unwrap();

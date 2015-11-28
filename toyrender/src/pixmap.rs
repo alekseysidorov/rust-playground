@@ -26,6 +26,17 @@ impl Pixmap {
     
     pub fn width(&self) -> usize { self.w }
     pub fn height(&self) -> usize { self.h }
+
+    pub fn get(&self, x: i32, y: i32) -> i32 {
+        if x < 0 || y < 0 {
+            return 0;
+        }
+        if x >= self.w as i32 || y >= self.h as i32 {
+            return 0;
+        }
+
+        self[x as usize][y as usize]
+    }
 }
 
 impl Index<usize> for Pixmap {

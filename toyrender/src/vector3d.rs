@@ -7,7 +7,7 @@ use num::traits::NumCast;
 
 use num::pow;
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Default)]
 pub struct Vector3D<T> {   
     pub x: T,
     pub y: T,
@@ -26,8 +26,11 @@ impl<T> Vector3D<T>
         }
     }
     
+    #[inline]
     pub fn x(&self) -> T { self.x }
+    #[inline]
     pub fn y(&self) -> T { self.y }
+    #[inline]
     pub fn z(&self) -> T { self.z }    
 }
 
@@ -43,10 +46,6 @@ impl Vector3D<f32> {
 
     pub fn normalized(self) -> Vector3D<f32> { 
         self * (1.0 / self.norm())
-    }
-    
-    pub fn round(self) -> Vec3i {
-        Vec3i::new(self.x as i32, self.y as i32, self.z as i32)
     }
 }
 
