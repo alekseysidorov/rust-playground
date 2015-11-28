@@ -225,15 +225,17 @@ impl SdlCanvas {
                     std::mem::swap(&mut auv, &mut buv);
                 }
 
+                let mut phi: f64 = 0.0;
+                let phi_step = 1.0 / (b.x - a.x) as f64;
                 for j in a.x as i32..b.x as i32+1 {
-                    let phi = if b.x == a.x { 1. } else { (j as f32 - a.x)/(b.x - a.x) };
-                    let p = (a + (b-a)*phi).to::<i32>();
-                    let puv = (auv + (buv-auv)*phi).to::<i32>();
+                    let p = (a + (b-a)*phi as f32).to::<i32>();
+                    let puv = (auv + (buv-auv)*phi as f32).to::<i32>();
 
                     if self.z_buffer[p.x as usize][p.y as usize]<p.z {
                         self.z_buffer[p.x as usize][p.y as usize] = p.z;
                         self.buffer[p.x as usize][p.y as usize] = get_gray(diffuse.get(puv.x, puv.y), intensity);
                     }
+                    phi += phi_step;
                 }
 
                 alpha += alpha_step;
@@ -309,7 +311,7 @@ pub fn main() {
             //    screen_coords[2].round(),
             //    color);
 
-            canvas.textured_triangle_raster(screen_coords[0].to::<i32>(),
+            canvas.textured_triangle(screen_coords[0].to::<i32>(),
                                      screen_coords[1].to::<i32>(),
                                      screen_coords[2].to::<i32>(),
                                      model.uv(i, 0),
@@ -321,9 +323,8 @@ pub fn main() {
         }
     }
     canvas.present();
-
     println!("Canvas presented");
-    
+
     let mut running = true;
     let mut event_pump = sdl_context.event_pump().unwrap();
 
