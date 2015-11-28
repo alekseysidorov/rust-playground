@@ -108,18 +108,33 @@ impl SdlCanvas {
                              mut uv0: Vec3i, mut uv1: Vec3i, mut uv2: Vec3i,
                              intensity: f32, diffuse: &Pixmap)
     {
-        if b.y() > a.y() { std::mem::swap(&mut a, &mut b); }
-        if c.y() > a.y() { std::mem::swap(&mut a, &mut c); }
-        if c.y() > b.y() { std::mem::swap(&mut c, &mut b); }
+        let get_gray = |color: u32, intensity: f32| -> u32 {
+            let mut result = ((color as u8) as f32*intensity) as u32;
+            result += (((color >> 8) as u8) as f32*intensity) as u32*256;
+            result += (((color >> 16) as u8) as f32*intensity) as u32*256*256;
+            return result;
+        };
+
+        if b.y() > a.y() {
+            std::mem::swap(&mut a, &mut b);
+            std::mem::swap(&mut uv0, &mut uv1);
+        }
+        if c.y() > a.y() {
+            std::mem::swap(&mut a, &mut c);
+            std::mem::swap(&mut uv0, &mut uv2);
+        }
+        if c.y() > b.y() {
+            std::mem::swap(&mut c, &mut b);
+            std::mem::swap(&mut uv2, &mut uv1);
+        }
+
         let alpha_step = 1.0 / (c.y - a.y) as f32;
         let mut alpha: f32 = 0.0;
-
         let mut fill_fn = |raster1 : &mut LineRasterizer, raster2: &mut LineRasterizer| {
             let mut y = raster1.point().y();
 
             let seg_height = raster2.end_point().y() - raster1.end_point().y();
             let beta_step = 1.0 / seg_height as f32;
-
             let mut beta = 0.0;
             while raster1.next_point() {
                 if y != raster1.point().y() {
@@ -129,12 +144,7 @@ impl SdlCanvas {
                         raster2.next_point();
                     }
 
-                    let p0 = raster1.point();
-                    let p1 = raster2.point();
-
-                    let total_width = num::abs(a.x() - b.x());
-
-                    self.line(raster1.point(), raster2.point(), 0);
+                    self.line(raster1.point(), raster2.point(), get_gray(0xffffff, intensity));
 
                     alpha += alpha_step;
                     beta += beta_step;
@@ -209,11 +219,22 @@ pub fn main() {
         if intensity > 0.0 {
             let l = (255.0 * intensity) as u32;
             let color = l | l << 8 | l << 16;
-            canvas.triangle(
-                screen_coords[0].round(),
-                screen_coords[1].round(),
-                screen_coords[2].round(),
-                color);
+
+            //canvas.triangle(
+            //    screen_coords[0].round(),
+            //    screen_coords[1].round(),
+            //    screen_coords[2].round(),
+            //    color);
+
+            canvas.textured_triangle(screen_coords[0].to::<i32>(),
+                                     screen_coords[1].to::<i32>(),
+                                     screen_coords[2].to::<i32>(),
+                                     model.uv(i, 0),
+                                     model.uv(i, 1),
+                                     model.uv(i, 2),
+                                     intensity,
+                                     &model.diffuse
+                                     );
         }
     }
     canvas.present();

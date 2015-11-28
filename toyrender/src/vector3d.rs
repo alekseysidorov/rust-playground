@@ -149,3 +149,12 @@ fn test_normalized() {
     assert!(v1.normalized().norm() - 1.0 < EPS);
     assert!(v2.normalized().norm() - 1.0 < EPS);
 }
+
+#[test]
+fn test_numcast() {
+    let v1 = Vec3f::new(2.0, 2.0, 0.0);
+    let v3 = Vec3i::new(2, 2, 0);
+
+    let v2 = v1.to::<i32>();
+    assert_eq!(v2, v3);
+}
