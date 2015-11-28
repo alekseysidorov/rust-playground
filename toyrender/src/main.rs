@@ -133,18 +133,20 @@ impl SdlCanvas {
         let alpha_step = 1.0 / total_height as f64;
         let mut alpha: f64 = 0.0;
 
+        let dp = (p2-p0).to::<f32>();
+        let duv = (uv2-uv0).to::<f32>();
         let mut segment_fn = |v0: Vec3i, v1: Vec3i, uuv0: Vec3i, uuv1: Vec3i| {
             // only first half
             let segment_height = v1.y - v0.y;
             for i in 0..segment_height {
-                let beta  = i as f32/segment_height as f32; // be careful: with above conditions no division by zero here
-                let mut a = p0.to::<f32>() + (p2-p0).to::<f32>()*alpha as f32;
-                let mut auv = uv0.to::<f32>() + (uv2-uv0).to::<f32>()*alpha as f32;
+                let mut a = p0.to::<f32>() + dp*alpha as f32;
+                let mut auv = uv0.to::<f32>() + duv*alpha as f32;
 
+                let beta  = i as f32/segment_height as f32; // be careful: with above conditions no division by zero here
                 let mut b = v0.to::<f32>() + (v1-v0).to::<f32>()*beta;
                 let mut buv = uuv0.to::<f32>() + (uuv1-uuv0).to::<f32>()*beta;
 
-                if a.x>b.x{
+                if a.x>b.x {
                     std::mem::swap(&mut a, &mut b);
                     std::mem::swap(&mut auv, &mut buv);
                 }
