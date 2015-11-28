@@ -17,6 +17,7 @@ pub struct LineRasterizer
     step: Vec3i,
     d: Vec3i,
     major_axis: usize,
+    first_step: bool,
 }
 
 impl LineRasterizer
@@ -46,13 +47,14 @@ impl LineRasterizer
             
             step: s,
             d: n,
-            major_axis: axis
+            major_axis: axis,
+            first_step: true
         }
     }
 
     #[inline]
     pub fn has_next(&mut self) -> bool {
-        if self.from == self.to { 
+        if self.from == self.to && !self.first_step {
             return false;
         }
         return true;
@@ -63,6 +65,11 @@ impl LineRasterizer
     
         if !self.has_next() {
             return false;
+        }
+
+        if self.first_step {
+            self.first_step = false;
+            return true;
         }
         
         let from = self.from; let to = self.to;
