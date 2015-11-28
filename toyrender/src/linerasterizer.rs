@@ -202,7 +202,21 @@ mod tests {
 
         let raster = LineRasterizer::new(v1, v2);
         
-        let p = raster.last();
-        assert!(p.is_none());
+        let p = raster.last().unwrap();
+        assert_eq!(p, v2);
+    }
+
+    #[test]
+    fn test_rasterizer_first_point() {
+
+        let v1 = Vec3i::new(10, 15, 10);
+        let v2 = Vec3i::new(25, 35, 10);
+
+        let raster = LineRasterizer::new(v1, v2);
+
+        for p in raster {
+            assert_eq!(p, v1);
+            break;
+        }
     }
 }
