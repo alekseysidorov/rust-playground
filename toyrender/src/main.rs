@@ -133,61 +133,39 @@ impl SdlCanvas {
         let alpha_step = 1.0 / total_height as f64;
         let mut alpha: f64 = 0.0;
 
-        // only first half
-        let segment_height = p1.y - p0.y;
-        for i in 0..segment_height {
-            let beta  = i as f32/segment_height as f32; // be careful: with above conditions no division by zero here
-            let mut a = p0.to::<f32>() + (p2-p0).to::<f32>()*alpha as f32;
-            let mut b = p0.to::<f32>() + (p1-p0).to::<f32>()*beta;
-            let mut auv = uv0.to::<f32>() + (uv2-uv0).to::<f32>()*alpha as f32;
-            let mut buv = uv0.to::<f32>() + (uv1-uv0).to::<f32>()*beta;
+        let mut segment_fn = |v0: Vec3i, v1: Vec3i, uuv0: Vec3i, uuv1: Vec3i| {
+            // only first half
+            let segment_height = v1.y - v0.y;
+            for i in 0..segment_height {
+                let beta  = i as f32/segment_height as f32; // be careful: with above conditions no division by zero here
+                let mut a = p0.to::<f32>() + (p2-p0).to::<f32>()*alpha as f32;
+                let mut auv = uv0.to::<f32>() + (uv2-uv0).to::<f32>()*alpha as f32;
 
-            if a.x>b.x{
-                std::mem::swap(&mut a, &mut b);
-                std::mem::swap(&mut auv, &mut buv);
-            }
+                let mut b = v0.to::<f32>() + (v1-v0).to::<f32>()*beta;
+                let mut buv = uuv0.to::<f32>() + (uuv1-uuv0).to::<f32>()*beta;
 
-            for j in a.x as i32..b.x as i32+1 {
-                let phi = if b.x == a.x { 1. } else { (j as f32 - a.x)/(b.x - a.x) };
-                let p = (a + (b-a)*phi).to::<i32>();
-                let puv = (auv + (buv-auv)*phi).to::<i32>();
-
-                if self.z_buffer[p.x as usize][p.y as usize]<p.z {
-                    self.z_buffer[p.x as usize][p.y as usize] = p.z;
-                    self.buffer[p.x as usize][p.y as usize] = get_gray(diffuse.get(puv.x, puv.y), intensity);
+                if a.x>b.x{
+                    std::mem::swap(&mut a, &mut b);
+                    std::mem::swap(&mut auv, &mut buv);
                 }
-            }
 
-            alpha += alpha_step;
-        }
+                for j in a.x as i32..b.x as i32+1 {
+                    let phi = if b.x == a.x { 1. } else { (j as f32 - a.x)/(b.x - a.x) };
+                    let p = (a + (b-a)*phi).to::<i32>();
+                    let puv = (auv + (buv-auv)*phi).to::<i32>();
 
-        // only second half
-        let segment_height = p2.y - p1.y;
-        for i in 0..segment_height {
-            let beta  = i as f32/segment_height as f32; // be careful: with above conditions no division by zero here
-            let mut a = p0.to::<f32>() + (p2-p0).to::<f32>()*alpha as f32;
-            let mut b = p1.to::<f32>() + (p2-p1).to::<f32>()*beta;
-            let mut auv = uv0.to::<f32>() + (uv2-uv0).to::<f32>()*alpha as f32;
-            let mut buv = uv1.to::<f32>() + (uv2-uv1).to::<f32>()*beta;
-
-            if a.x>b.x{
-                std::mem::swap(&mut a, &mut b);
-                std::mem::swap(&mut auv, &mut buv);
-            }
-
-            for j in a.x as i32..b.x as i32+1 {
-                let phi = if b.x == a.x { 1. } else { (j as f32 - a.x)/(b.x - a.x) };
-                let p = (a + (b-a)*phi).to::<i32>();
-                let puv = (auv + (buv-auv)*phi).to::<i32>();
-
-                if self.z_buffer[p.x as usize][p.y as usize]<p.z {
-                    self.z_buffer[p.x as usize][p.y as usize] = p.z;
-                    self.buffer[p.x as usize][p.y as usize] = get_gray(diffuse.get(puv.x, puv.y), intensity);
+                    if self.z_buffer[p.x as usize][p.y as usize]<p.z {
+                        self.z_buffer[p.x as usize][p.y as usize] = p.z;
+                        self.buffer[p.x as usize][p.y as usize] = get_gray(diffuse.get(puv.x, puv.y), intensity);
+                    }
                 }
-            }
 
-            alpha += alpha_step;
-        }
+                alpha += alpha_step;
+            }
+        };
+
+        segment_fn(p0, p1, uv0, uv1);
+        segment_fn(p1, p2, uv1, uv2);
     }
     
     pub fn set_pixel(&mut self, v: Vec3i, color: u32) {
