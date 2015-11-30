@@ -13,6 +13,7 @@ pub type Result<T> = io::Result<T>;
 pub struct Model {
     pub verticies: Vec<Vec3f>,
     pub faces: Vec<[Vec3i; 3]>,
+    pub normals: Vec<Vec3f>,
     pub diffuse: Pixmap,
     pub uv: Vec<[f32; 2]>
 }
@@ -56,13 +57,11 @@ impl Loader {
 
             let words: Vec<&str>;
             words = line.split_whitespace().collect();
-            if line.starts_with("v ") {
-                
-                let mut points : [f32; 3] = [ 0.0, 0.0, 0.0 ];
+            if line.starts_with("v ") {                
+                let mut v = Vec3f { ..Default::default() };
                 for i in 0..3 {
-                    points[i] = words[i+1].parse::<f32>().unwrap();
+                    v[i] = words[i+1].parse::<f32>().unwrap();
                 }                
-                let v = Vec3f::new(points[0], points[1], points[2]);
                 model.verticies.push(v);
             } else if line.starts_with("f ") {
                 let mut face: [Vec3i; 3] = [Vec3i::new(-1, -1, -1); 3];
@@ -78,7 +77,13 @@ impl Loader {
             } else if line.starts_with("vt ") {
                 let w: Vec<&str> = line.split_whitespace().collect();
                 model.uv.push([w[1].parse().unwrap(), w[2].parse().unwrap()]); //FIXME remove unwraps
-            }
+            } else if line.starts_with("vn ") {
+                let mut v = Vec3f { ..Default::default() };
+                for i in 0..3 {
+                    v[i] = words[i+1].parse::<f32>().unwrap();
+                }                
+                model.normals.push(v);
+            } 
         }
         Ok(model)
     }
