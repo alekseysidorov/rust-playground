@@ -278,9 +278,9 @@ pub fn main() {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
 
-    let w = 1200;
-    let h = 1200;
-    let d = 255;
+    let w = 600;
+    let h = 600;
+    let d = 600;
 
     let window = video_subsystem.window("rust-sdl2 demo: Video", w, h)
         .position_centered()
