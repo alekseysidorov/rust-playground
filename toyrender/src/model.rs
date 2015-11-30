@@ -32,6 +32,11 @@ impl Model {
                            self.uv[idx][1] * self.diffuse.height() as f32, 
                            0.0)
     }
+    
+    pub fn normal(&self, iface: usize, nvert: usize) -> Vec3f {
+        let idx = self.faces[iface][nvert][2] as usize;
+        return self.normals[idx].normalized();
+    }
 
 }
 

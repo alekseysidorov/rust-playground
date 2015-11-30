@@ -47,6 +47,10 @@ impl Vector3D<f32> {
     pub fn normalized(self) -> Vector3D<f32> { 
         self * (1.0 / self.norm())
     }
+    
+    pub fn zero() -> Vector3D<f32> {
+        Vector3D::new(0.0, 0.0, 0.0)
+    }
 }
 
 impl<T: Add<Output = T>> Add for Vector3D<T> {

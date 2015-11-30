@@ -183,8 +183,11 @@ impl SdlCanvas {
     }
 
     pub fn textured_triangle(&mut self, mut p0: Vec3i, mut p1: Vec3i, mut p2: Vec3i,
-                             mut uv0: Vec3f, mut uv1: Vec3f, mut uv2: Vec3f,
-                             intensity: f32, diffuse: &Pixmap)
+                             uv: &[Vec3f],
+                             normals: &[Vec3f],
+                             diffuse: &Pixmap, 
+                             light_dir: Vec3f
+                             )
     {
         let get_gray = |color: i32, intensity: f32| -> i32 {
             let mut result = ((color as u8) as f32*intensity) as u32;
@@ -192,7 +195,13 @@ impl SdlCanvas {
             result += (((color >> 16) as u8) as f32*intensity) as u32*256*256;
             return result as i32;
         };
+        
+        let n = normals[0] + normals[1] + normals[2];
+        let intensity = 0.5 - (light_dir * n) / 3.0;
 
+        let mut uv0 = uv[0];
+        let mut uv1 = uv[1];
+        let mut uv2 = uv[2];
         if p0.y > p1.y {
             std::mem::swap(&mut p0, &mut p1);
             std::mem::swap(&mut uv0, &mut uv1);
@@ -290,18 +299,22 @@ pub fn main() {
     for i in 0..model.faces.len() {
         let face = model.faces[i];
 
-        let mut screen_coords = [Vec3f::new(0.0, 0.0, 0.0); 3];
-        let mut world_coords = [Vec3f::new(0.0,0.0,0.0); 3];
+        let mut screen_coords = [Vec3f::zero(); 3];
+        let mut world_coords = [Vec3f::zero(); 3];
+        let mut normals = [Vec3f::zero(); 3];
+        let mut uv = [Vec3f::zero(); 3];
     
-        for i in 0..3 {
-            let world = model.verticies[face[i][0] as usize];
+        for j in 0..3 {
+            let world = model.verticies[face[j][0] as usize];
             
-            screen_coords[i] = Vec3f::new(
+            screen_coords[j] = Vec3f::new(
                 ((world.x + 1.0) * w as f32 / 2.0), 
                 h as f32 - ((world.y + 1.0) * h as f32 / 2.0), 
                 world.z as f32 * d as f32
             );
-            world_coords[i] = world;
+            world_coords[j] = world;
+            normals[j] = model.normal(i, j);
+            uv[j] = model.uv(i, j);
         }
          
         let n: Vec3f = ((world_coords[2]-world_coords[0]) ^ (world_coords[1]-world_coords[0])).normalized();        
@@ -316,15 +329,18 @@ pub fn main() {
             //    screen_coords[1].round(),
             //    screen_coords[2].round(),
             //    color);
-
+            
+            //normals[0] = n;
+            //normals[1] = n;
+            //normals[2] = n;
+            
             canvas.textured_triangle(screen_coords[0].to::<i32>(),
                                      screen_coords[1].to::<i32>(),
                                      screen_coords[2].to::<i32>(),
-                                     model.uv(i, 0),
-                                     model.uv(i, 1),
-                                     model.uv(i, 2),
-                                     intensity,
-                                     &model.diffuse
+                                     &uv,
+                                     &normals,
+                                     &model.diffuse,                                     
+                                     light_dir,
                                      );
         }
     }
