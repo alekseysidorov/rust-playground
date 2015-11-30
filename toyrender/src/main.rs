@@ -27,6 +27,14 @@ struct SdlCanvas
     height: usize
 }
 
+#[derive(Default, Clone, Copy)]
+struct Vertex
+{
+    pos: Vec3i,
+    uv: Vec3f,
+    norm: Vec3f
+}
+
 impl SdlCanvas {
     pub fn new(renderer: Renderer<'static>, w: usize, h: usize) -> SdlCanvas {
         SdlCanvas { 
@@ -182,7 +190,7 @@ impl SdlCanvas {
         raster_fn(p1, p2, uv1, uv2);
     }
 
-    pub fn textured_triangle(&mut self, mut p0: Vec3i, mut p1: Vec3i, mut p2: Vec3i,
+    pub fn textured_triangle(&mut self, pos: &[Vec3i],
                              uv: &[Vec3f],
                              normals: &[Vec3f],
                              diffuse: &Pixmap, 
@@ -199,6 +207,9 @@ impl SdlCanvas {
         let n = normals[0] + normals[1] + normals[2];
         let intensity = 0.5 - (light_dir * n) / 3.0;
 
+        let mut p0  = pos[0];
+        let mut p1  = pos[1];
+        let mut p2  = pos[2];
         let mut uv0 = uv[0];
         let mut uv1 = uv[1];
         let mut uv2 = uv[2];
@@ -299,19 +310,21 @@ pub fn main() {
     for i in 0..model.faces.len() {
         let face = model.faces[i];
 
-        let mut screen_coords = [Vec3f::zero(); 3];
         let mut world_coords = [Vec3f::zero(); 3];
         let mut normals = [Vec3f::zero(); 3];
         let mut uv = [Vec3f::zero(); 3];
+        let mut screen_coords = [Vec3i::zero(); 3];
+
+        let mut verts = [Vertex{..Default::default()}; 3];
     
         for j in 0..3 {
             let world = model.verticies[face[j][0] as usize];
-            
+
             screen_coords[j] = Vec3f::new(
                 ((world.x + 1.0) * w as f32 / 2.0), 
                 h as f32 - ((world.y + 1.0) * h as f32 / 2.0), 
                 world.z as f32 * d as f32
-            );
+            ).to::<i32>();
             world_coords[j] = world;
             normals[j] = model.normal(i, j);
             uv[j] = model.uv(i, j);
@@ -334,9 +347,7 @@ pub fn main() {
             //normals[1] = n;
             //normals[2] = n;
             
-            canvas.textured_triangle(screen_coords[0].to::<i32>(),
-                                     screen_coords[1].to::<i32>(),
-                                     screen_coords[2].to::<i32>(),
+            canvas.textured_triangle(&screen_coords,
                                      &uv,
                                      &normals,
                                      &model.diffuse,                                     

@@ -53,6 +53,12 @@ impl Vector3D<f32> {
     }
 }
 
+impl Vector3D<i32> {
+    pub fn zero() -> Vector3D<i32> {
+        Vector3D::new(0, 0, 0)
+    }
+}
+
 impl<T: Add<Output = T>> Add for Vector3D<T> {
     type Output = Vector3D<T>;
     
