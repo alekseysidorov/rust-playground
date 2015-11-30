@@ -72,6 +72,7 @@ impl SdlCanvas {
         self.buffer.fill(0);
     }
     
+    #[allow(dead_code)]
     pub fn line(&mut self, a: Vec3i, b: Vec3i, color: u32)
     {
         self.set_pixel(a, color);
@@ -80,6 +81,7 @@ impl SdlCanvas {
         }
     }
     
+    #[allow(dead_code)]
     pub fn triangle(&mut self, mut a: Vec3i, mut b: Vec3i, mut c: Vec3i, color: u32)
     {
         if b.y() > a.y() { std::mem::swap(&mut a, &mut b); }
@@ -190,9 +192,7 @@ impl SdlCanvas {
         raster_fn(p1, p2, uv1, uv2);
     }
 
-    pub fn textured_triangle(&mut self, pos: &[Vec3i],
-                             uv: &[Vec3f],
-                             normals: &[Vec3f],
+    pub fn textured_triangle(&mut self, mut v: [Vertex; 3],
                              diffuse: &Pixmap, 
                              light_dir: Vec3f
                              )
@@ -204,15 +204,15 @@ impl SdlCanvas {
             return result as i32;
         };
         
-        let n = normals[0] + normals[1] + normals[2];
+        let n = v[0].norm + v[1].norm + v[2].norm;
         let intensity = 0.5 - (light_dir * n) / 3.0;
 
-        let mut p0  = pos[0];
-        let mut p1  = pos[1];
-        let mut p2  = pos[2];
-        let mut uv0 = uv[0];
-        let mut uv1 = uv[1];
-        let mut uv2 = uv[2];
+        let mut p0  = v[0].pos;
+        let mut p1  = v[1].pos;
+        let mut p2  = v[2].pos;
+        let mut uv0 = v[0].uv;
+        let mut uv1 = v[1].uv;
+        let mut uv2 = v[2].uv;
         if p0.y > p1.y {
             std::mem::swap(&mut p0, &mut p1);
             std::mem::swap(&mut uv0, &mut uv1);
@@ -232,7 +232,7 @@ impl SdlCanvas {
         let mut alpha: f64 = 0.0;
 
         let dp = (p2-p0).to::<f32>();
-        let duv = (uv2-uv0);
+        let duv = uv2-uv0;
         let mut segment_fn = |v0: Vec3i, v1: Vec3i, uuv0: Vec3f, uuv1: Vec3f| {
             // only first half
             let segment_height = v1.y - v0.y;
@@ -311,23 +311,19 @@ pub fn main() {
         let face = model.faces[i];
 
         let mut world_coords = [Vec3f::zero(); 3];
-        let mut normals = [Vec3f::zero(); 3];
-        let mut uv = [Vec3f::zero(); 3];
-        let mut screen_coords = [Vec3i::zero(); 3];
-
         let mut verts = [Vertex{..Default::default()}; 3];
-    
         for j in 0..3 {
             let world = model.verticies[face[j][0] as usize];
-
-            screen_coords[j] = Vec3f::new(
+            world_coords[j] = world;
+            
+            let v = &mut verts[j];
+            v.pos = Vec3f::new(
                 ((world.x + 1.0) * w as f32 / 2.0), 
                 h as f32 - ((world.y + 1.0) * h as f32 / 2.0), 
                 world.z as f32 * d as f32
             ).to::<i32>();
-            world_coords[j] = world;
-            normals[j] = model.normal(i, j);
-            uv[j] = model.uv(i, j);
+            v.norm = model.normal(i, j);
+            v.uv = model.uv(i, j);
         }
          
         let n: Vec3f = ((world_coords[2]-world_coords[0]) ^ (world_coords[1]-world_coords[0])).normalized();        
@@ -335,7 +331,6 @@ pub fn main() {
         
         if intensity > 0.0 {
             let l = (255.0 * intensity) as u32;
-            let color = l | l << 8 | l << 16;
 
             //canvas.triangle(
             //    screen_coords[0].round(),
@@ -347,12 +342,7 @@ pub fn main() {
             //normals[1] = n;
             //normals[2] = n;
             
-            canvas.textured_triangle(&screen_coords,
-                                     &uv,
-                                     &normals,
-                                     &model.diffuse,                                     
-                                     light_dir,
-                                     );
+            canvas.textured_triangle(verts, &model.diffuse, light_dir);
         }
     }
     canvas.present();
