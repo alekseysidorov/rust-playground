@@ -217,30 +217,23 @@ impl SdlCanvas {
             let segment_height = (v[l].pos.y - v[k].pos.y) as i32;
             let beta_step = 1.0 / segment_height as f64;
             let mut beta = 0.0;
-            let duuv = (v[l].uv-v[k].uv).to::<f32>();
-            let dnn = v[l].norm - v[k].norm;
+
+            let dv1 = (v[l] - v[k]);
             for i in 0..segment_height {
-                let mut a = v[0].pos + dv.pos*alpha as f32;
-                let mut auv = v[0].uv + dv.uv*alpha as f32;
-                let mut an = v[0].norm + dv.norm*alpha as f32;
+                let mut a = v[0] + dv * alpha as f32;
+                let mut b = v[k] + dv1 * beta as f32;
 
-                let mut b = v[k].pos + (v[l].pos-v[k].pos)*beta as f32;
-                let mut buv = v[k].uv + duuv*beta as f32;
-                let mut bn = v[k].norm + dnn*beta as f32;
-
-                if a.x>b.x {
+                if a.pos.x > b.pos.x {
                     std::mem::swap(&mut a, &mut b);
-                    std::mem::swap(&mut auv, &mut buv);
-                    std::mem::swap(&mut an, &mut bn);
                 }
 
                 let mut phi: f64 = 0.0;
-                let phi_step = 1.0 / (b.x - a.x) as f64;
-                for j in a.x as i32..b.x as i32+1 {
-                    let p   = (a + (b-a)*phi as f32).to::<i32>();
-                    let puv = (auv + (buv-auv)*phi as f32).to::<i32>();
-                    let pn  = (an + (bn-an)*phi as f32).normalized();
-                    let intensity = 0.5; //light_dir * pn;
+                let phi_step = 1.0 / (b.pos.x - a.pos.x) as f64;
+                for j in a.pos.x as i32..b.pos.x as i32+1 {
+                    let p   = (a.pos + (b.pos-a.pos)*phi as f32).to::<i32>();
+                    let puv = (a.uv + (b.uv-a.uv)*phi as f32).to::<i32>();
+                    let pn  = (a.norm + (b.norm-a.norm)*phi as f32);
+                    let intensity = 0.5 - light_dir * pn;
 
                     if self.z_buffer[p.x as usize][p.y as usize]<p.z {
                         self.z_buffer[p.x as usize][p.y as usize] = p.z;

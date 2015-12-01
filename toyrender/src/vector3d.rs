@@ -168,6 +168,19 @@ impl Sub for Vertex {
     }
 }
 
+impl Add for Vertex {
+    type Output = Vertex;
+
+    fn add(self, other: Vertex) -> Self::Output {
+        Vertex {
+            pos:  self.pos + other.pos,
+            uv:   self.uv + other.uv,
+            norm: self.norm + other.norm
+        }
+    }
+}
+
+
 impl Mul<f32> for Vertex {
     type Output = Vertex;
 
