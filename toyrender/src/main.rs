@@ -11,7 +11,7 @@ use sdl2::pixels::{ PixelFormatEnum };
 use sdl2::keyboard::Keycode;
 use sdl2::render::Renderer;
 
-use toyrender::vector3d::{ Vec3f, Vec3i };
+use toyrender::vector3d::{ Vec3f, Vec3i, Vertex };
 use toyrender::linerasterizer::LineRasterizer;
 use toyrender::pixmap::Pixmap;
 use toyrender::model::{ Loader };
@@ -25,14 +25,6 @@ struct SdlCanvas
     
     width: usize,
     height: usize
-}
-
-#[derive(Default, Clone, Copy)]
-struct Vertex
-{
-    pos: Vec3i,
-    uv: Vec3f,
-    norm: Vec3f
 }
 
 impl SdlCanvas {
@@ -214,36 +206,27 @@ impl SdlCanvas {
             v.swap(1, 2);
         }
 
-        let mut p0  = v[0].pos;
-        let mut p1  = v[1].pos;
-        let mut p2  = v[2].pos;
-        let mut uv0 = v[0].uv;
-        let mut uv1 = v[1].uv;
-        let mut uv2 = v[2].uv;
-
-        let total_height = p2.y - p0.y;
+        let total_height = v[2].pos.y - v[0].pos.y;
 
         let alpha_step = 1.0 / total_height as f64;
         let mut alpha: f64 = 0.0;
 
-        let dp = (p2-p0).to::<f32>();
-        let duv = uv2-uv0;
-        let dn  = v[2].norm - v[0].norm;
-        let mut segment_fn = |v0: Vec3i, v1: Vec3i, uuv0: Vec3f, uuv1: Vec3f, nn: [Vec3f;2]| {
+        let dv = v[2] - v[0];
+        let mut segment_fn = |k: usize, l: usize| {
             // only first half
-            let segment_height = v1.y - v0.y;
+            let segment_height = (v[l].pos.y - v[k].pos.y) as i32;
             let beta_step = 1.0 / segment_height as f64;
             let mut beta = 0.0;
-            let duuv = (uuv1-uuv0).to::<f32>();
-            let dnn = nn[1] - nn[0];
+            let duuv = (v[l].uv-v[k].uv).to::<f32>();
+            let dnn = v[l].norm - v[k].norm;
             for i in 0..segment_height {
-                let mut a = p0.to::<f32>() + dp*alpha as f32;
-                let mut auv = uv0 + duv*alpha as f32;
-                let mut an = v[0].norm + dn*alpha as f32;
+                let mut a = v[0].pos + dv.pos*alpha as f32;
+                let mut auv = v[0].uv + dv.uv*alpha as f32;
+                let mut an = v[0].norm + dv.norm*alpha as f32;
 
-                let mut b = v0.to::<f32>() + (v1-v0).to::<f32>()*beta as f32;
-                let mut buv = uuv0 + duuv*beta as f32;
-                let mut bn = nn[0] + dnn*beta as f32;
+                let mut b = v[k].pos + (v[l].pos-v[k].pos)*beta as f32;
+                let mut buv = v[k].uv + duuv*beta as f32;
+                let mut bn = v[k].norm + dnn*beta as f32;
 
                 if a.x>b.x {
                     std::mem::swap(&mut a, &mut b);
@@ -257,7 +240,7 @@ impl SdlCanvas {
                     let p   = (a + (b-a)*phi as f32).to::<i32>();
                     let puv = (auv + (buv-auv)*phi as f32).to::<i32>();
                     let pn  = (an + (bn-an)*phi as f32).normalized();
-                    let intensity = 1.0;//light_dir * pn;
+                    let intensity = 0.5; //light_dir * pn;
 
                     if self.z_buffer[p.x as usize][p.y as usize]<p.z {
                         self.z_buffer[p.x as usize][p.y as usize] = p.z;
@@ -271,8 +254,8 @@ impl SdlCanvas {
             }
         };
 
-        segment_fn(p0, p1, uv0, uv1, [v[0].norm, v[1].norm]);
-        segment_fn(p1, p2, uv1, uv2, [v[1].norm, v[2].norm]);
+        segment_fn(0, 1);
+        segment_fn(1, 2);
     }
     
     pub fn set_pixel(&mut self, v: Vec3i, color: u32) {
@@ -291,8 +274,8 @@ pub fn main() {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
 
-    let w = 600;
-    let h = 600;
+    let w = 900;
+    let h = 900;
     let d = 600;
 
     let window = video_subsystem.window("rust-sdl2 demo: Video", w, h)
@@ -323,9 +306,10 @@ pub fn main() {
                 ((world.x + 1.0) * w as f32 / 2.0), 
                 h as f32 - ((world.y + 1.0) * h as f32 / 2.0), 
                 world.z as f32 * d as f32
-            ).to::<i32>();
+            );
             v.norm = model.normal(i, j);
             v.uv = model.uv(i, j);
+            v.pos = v.pos.to::<i32>().to::<f32>(); //round pos
         }
          
         let n: Vec3f = ((world_coords[2]-world_coords[0]) ^ (world_coords[1]-world_coords[0])).normalized();        

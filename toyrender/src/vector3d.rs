@@ -148,6 +148,38 @@ impl<T: NumCast> Vector3D<T> {
     }
 }
 
+#[derive(Default, Clone, Copy)]
+pub struct Vertex
+{
+    pub pos: Vec3f,
+    pub uv: Vec3f,
+    pub norm: Vec3f
+}
+
+impl Sub for Vertex {
+    type Output = Vertex;
+
+    fn sub(self, other: Vertex) -> Self::Output {
+        Vertex {
+            pos:  self.pos - other.pos,
+            uv:   self.uv - other.uv,
+            norm: self.norm - other.norm
+        }
+    }
+}
+
+impl Mul<f32> for Vertex {
+    type Output = Vertex;
+
+    fn mul(self, other: f32) -> Self::Output {
+        Vertex {
+            pos:  self.pos * other,
+            uv:   self.uv * other,
+            norm: self.norm * other
+        }
+    }
+}
+
 #[test]
 fn test_normalized() {
     const EPS: f32 = 0.001;
@@ -167,3 +199,4 @@ fn test_numcast() {
     let v2 = v1.to::<i32>();
     assert_eq!(v2, v3);
 }
+
