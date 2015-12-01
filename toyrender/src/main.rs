@@ -203,9 +203,16 @@ impl SdlCanvas {
             result += (((color >> 16) as u8) as f32*intensity) as u32*256*256;
             return result as i32;
         };
-        
-        let n = v[0].norm + v[1].norm + v[2].norm;
-        let intensity = 0.5 - (light_dir * n) / 3.0;
+
+        if v[0].pos.y > v[1].pos.y {
+            v.swap(0, 1);
+        }
+        if v[0].pos.y > v[2].pos.y {
+            v.swap(0, 2);
+        }
+        if v[1].pos.y > v[2].pos.y {
+            v.swap(1, 2);
+        }
 
         let mut p0  = v[0].pos;
         let mut p1  = v[1].pos;
@@ -213,18 +220,6 @@ impl SdlCanvas {
         let mut uv0 = v[0].uv;
         let mut uv1 = v[1].uv;
         let mut uv2 = v[2].uv;
-        if p0.y > p1.y {
-            std::mem::swap(&mut p0, &mut p1);
-            std::mem::swap(&mut uv0, &mut uv1);
-        }
-        if p0.y > p2.y {
-            std::mem::swap(&mut p0, &mut p2);
-            std::mem::swap(&mut uv0, &mut uv2);
-        }
-        if p1.y > p2.y {
-            std::mem::swap(&mut p1, &mut p2);
-            std::mem::swap(&mut uv1, &mut uv2);
-        }
 
         let total_height = p2.y - p0.y;
 
@@ -233,29 +228,36 @@ impl SdlCanvas {
 
         let dp = (p2-p0).to::<f32>();
         let duv = uv2-uv0;
-        let mut segment_fn = |v0: Vec3i, v1: Vec3i, uuv0: Vec3f, uuv1: Vec3f| {
+        let dn  = v[2].norm - v[0].norm;
+        let mut segment_fn = |v0: Vec3i, v1: Vec3i, uuv0: Vec3f, uuv1: Vec3f, nn: [Vec3f;2]| {
             // only first half
             let segment_height = v1.y - v0.y;
             let beta_step = 1.0 / segment_height as f64;
             let mut beta = 0.0;
             let duuv = (uuv1-uuv0).to::<f32>();
+            let dnn = nn[1] - nn[0];
             for i in 0..segment_height {
                 let mut a = p0.to::<f32>() + dp*alpha as f32;
                 let mut auv = uv0 + duv*alpha as f32;
+                let mut an = v[0].norm + dn*alpha as f32;
 
                 let mut b = v0.to::<f32>() + (v1-v0).to::<f32>()*beta as f32;
                 let mut buv = uuv0 + duuv*beta as f32;
+                let mut bn = nn[0] + dnn*beta as f32;
 
                 if a.x>b.x {
                     std::mem::swap(&mut a, &mut b);
                     std::mem::swap(&mut auv, &mut buv);
+                    std::mem::swap(&mut an, &mut bn);
                 }
 
                 let mut phi: f64 = 0.0;
                 let phi_step = 1.0 / (b.x - a.x) as f64;
                 for j in a.x as i32..b.x as i32+1 {
-                    let p = (a + (b-a)*phi as f32).to::<i32>();
+                    let p   = (a + (b-a)*phi as f32).to::<i32>();
                     let puv = (auv + (buv-auv)*phi as f32).to::<i32>();
+                    let pn  = (an + (bn-an)*phi as f32).normalized();
+                    let intensity = 1.0;//light_dir * pn;
 
                     if self.z_buffer[p.x as usize][p.y as usize]<p.z {
                         self.z_buffer[p.x as usize][p.y as usize] = p.z;
@@ -269,8 +271,8 @@ impl SdlCanvas {
             }
         };
 
-        segment_fn(p0, p1, uv0, uv1);
-        segment_fn(p1, p2, uv1, uv2);
+        segment_fn(p0, p1, uv0, uv1, [v[0].norm, v[1].norm]);
+        segment_fn(p1, p2, uv1, uv2, [v[1].norm, v[2].norm]);
     }
     
     pub fn set_pixel(&mut self, v: Vec3i, color: u32) {
