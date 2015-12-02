@@ -106,83 +106,83 @@ impl SdlCanvas {
         fill_fn(&mut raster1, &mut raster2);
     }
 
-    pub fn textured_triangle_raster(&mut self, mut p0: Vec3i, mut p1: Vec3i, mut p2: Vec3i,
-                                    mut uv0: Vec3f, mut uv1: Vec3f, mut uv2: Vec3f,
-                                    intensity: f32, diffuse: &Pixmap)
-    {
-        let get_gray = |color: i32, intensity: f32| -> i32 {
-            let mut result = ((color as u8) as f32*intensity) as u32;
-            result += (((color >> 8) as u8) as f32*intensity) as u32*256;
-            result += (((color >> 16) as u8) as f32*intensity) as u32*256*256;
-            return result as i32;
-        };
-
-        if p0.y > p1.y {
-            std::mem::swap(&mut p0, &mut p1);
-            std::mem::swap(&mut uv0, &mut uv1);
-        }
-        if p0.y > p2.y {
-            std::mem::swap(&mut p0, &mut p2);
-            std::mem::swap(&mut uv0, &mut uv2);
-        }
-        if p1.y > p2.y {
-            std::mem::swap(&mut p1, &mut p2);
-            std::mem::swap(&mut uv1, &mut uv2);
-        }
-
-        let alpha_step = 1.0 / (p2.y - p0.y) as f64;
-        let mut alpha: f64 = 0.0;
-
-        let dp = (p2-p0).to::<f32>();
-        let duv = (uv2-uv0);
-        let mut raster2 = LineRasterizer::new(p0, p2);
-        let mut raster_fn = |v0: Vec3i, v1: Vec3i, uuv0: Vec3f, uuv1: Vec3f| {
-            let mut raster1 = LineRasterizer::new(v0, v1);
-
-            let beta_step = 1.0 / (v1.y - v0.y) as f64;
-            let mut beta = 0.0;
-            let duuv = (uuv1-uuv0);
-
-            let mut y = raster1.point().y();
-            while raster1.next_point() {
-                if y != raster1.point().y() {
-                    y = raster1.point().y();
-                    while raster2.point().y() != y {
-                        raster2.next_point();
-                    }
-
-                    let mut auv = uv0 + duv*alpha as f32;
-                    let mut buv = uuv0 + duuv*beta as f32;
-
-                    let mut a = raster1.point();
-                    let mut b = raster2.point();
-
-                    if a.x>b.x {
-                        std::mem::swap(&mut a, &mut b);
-                        std::mem::swap(&mut auv, &mut buv);
-                    }
-
-                    let mut phi = 0.0;
-                    let phi_step = 1.0 / (b.x - a.x) as f64;
-                    for p in LineRasterizer::new(a, b) {
-                        let puv = (auv + (buv-auv)*phi as f32).to::<i32>();
-
-                        if self.z_buffer[p.x as usize][p.y as usize] < p.z {
-                            self.z_buffer[p.x as usize][p.y as usize] = p.z;
-                            self.buffer[p.x as usize][p.y as usize] = get_gray(diffuse.get(puv.x, puv.y), intensity);
-                        }
-                        phi += phi_step;
-                    }
-
-                    alpha += alpha_step;
-                    beta += beta_step;
-                }
-            }
-        };
-
-        raster_fn(p0, p1, uv0, uv1);
-        raster_fn(p1, p2, uv1, uv2);
-    }
+//     pub fn textured_triangle_raster(&mut self, mut p0: Vec3i, mut p1: Vec3i, mut p2: Vec3i,
+//                                     mut uv0: Vec3f, mut uv1: Vec3f, mut uv2: Vec3f,
+//                                     intensity: f32, diffuse: &Pixmap)
+//     {
+//         let get_gray = |color: i32, intensity: f32| -> i32 {
+//             let mut result = ((color as u8) as f32*intensity) as u32;
+//             result += (((color >> 8) as u8) as f32*intensity) as u32*256;
+//             result += (((color >> 16) as u8) as f32*intensity) as u32*256*256;
+//             return result as i32;
+//         };
+// 
+//         if p0.y > p1.y {
+//             std::mem::swap(&mut p0, &mut p1);
+//             std::mem::swap(&mut uv0, &mut uv1);
+//         }
+//         if p0.y > p2.y {
+//             std::mem::swap(&mut p0, &mut p2);
+//             std::mem::swap(&mut uv0, &mut uv2);
+//         }
+//         if p1.y > p2.y {
+//             std::mem::swap(&mut p1, &mut p2);
+//             std::mem::swap(&mut uv1, &mut uv2);
+//         }
+// 
+//         let alpha_step = 1.0 / (p2.y - p0.y) as f64;
+//         let mut alpha: f64 = 0.0;
+// 
+//         let dp = (p2-p0).to::<f32>();
+//         let duv = (uv2-uv0);
+//         let mut raster2 = LineRasterizer::new(p0, p2);
+//         let mut raster_fn = |v0: Vec3i, v1: Vec3i, uuv0: Vec3f, uuv1: Vec3f| {
+//             let mut raster1 = LineRasterizer::new(v0, v1);
+// 
+//             let beta_step = 1.0 / (v1.y - v0.y) as f64;
+//             let mut beta = 0.0;
+//             let duuv = (uuv1-uuv0);
+// 
+//             let mut y = raster1.point().y();
+//             while raster1.next_point() {
+//                 if y != raster1.point().y() {
+//                     y = raster1.point().y();
+//                     while raster2.point().y() != y {
+//                         raster2.next_point();
+//                     }
+// 
+//                     let mut auv = uv0 + duv*alpha as f32;
+//                     let mut buv = uuv0 + duuv*beta as f32;
+// 
+//                     let mut a = raster1.point();
+//                     let mut b = raster2.point();
+// 
+//                     if a.x>b.x {
+//                         std::mem::swap(&mut a, &mut b);
+//                         std::mem::swap(&mut auv, &mut buv);
+//                     }
+// 
+//                     let mut phi = 0.0;
+//                     let phi_step = 1.0 / (b.x - a.x) as f64;
+//                     for p in LineRasterizer::new(a, b) {
+//                         let puv = (auv + (buv-auv)*phi as f32).to::<i32>();
+// 
+//                         if self.z_buffer[p.x as usize][p.y as usize] < p.z {
+//                             self.z_buffer[p.x as usize][p.y as usize] = p.z;
+//                             self.buffer[p.x as usize][p.y as usize] = get_gray(diffuse.get(puv.x, puv.y), intensity);
+//                         }
+//                         phi += phi_step;
+//                     }
+// 
+//                     alpha += alpha_step;
+//                     beta += beta_step;
+//                 }
+//             }
+//         };
+// 
+//         raster_fn(p0, p1, uv0, uv1);
+//         raster_fn(p1, p2, uv1, uv2);
+//     }
 
     pub fn textured_triangle(&mut self, mut v: [Vertex; 3],
                              diffuse: &Pixmap, 
@@ -218,8 +218,8 @@ impl SdlCanvas {
             let beta_step = 1.0 / segment_height as f64;
             let mut beta = 0.0;
 
-            let dv1 = (v[l] - v[k]);
-            for i in 0..segment_height {
+            let dv1 = v[l] - v[k];
+            for _ in 0..segment_height {
                 let mut a = v[0] + dv * alpha as f32;
                 let mut b = v[k] + dv1 * beta as f32;
 
@@ -229,15 +229,13 @@ impl SdlCanvas {
 
                 let mut phi: f64 = 0.0;
                 let phi_step = 1.0 / (b.pos.x - a.pos.x) as f64;
-                for j in a.pos.x as i32..b.pos.x as i32+1 {
-                    let p   = (a.pos + (b.pos-a.pos)*phi as f32).to::<i32>();
-                    let puv = (a.uv + (b.uv-a.uv)*phi as f32).to::<i32>();
-                    let pn  = (a.norm + (b.norm-a.norm)*phi as f32);
-                    let intensity = 0.5 - light_dir * pn;
-
-                    if self.z_buffer[p.x as usize][p.y as usize]<p.z {
-                        self.z_buffer[p.x as usize][p.y as usize] = p.z;
-                        self.buffer[p.x as usize][p.y as usize] = get_gray(diffuse.get(puv.x, puv.y), intensity);
+                for _ in a.pos.x as i32..b.pos.x as i32+1 {
+                    let p = a + (b - a) * phi as f32;
+                    let intensity = 0.5 - light_dir * p.norm;
+                    let x = p.pos.x as usize; let y = p.pos.y as usize;
+                    if self.z_buffer[x][y] < p.pos.z as i32 {
+                        self.z_buffer[x][y] = p.pos.z as i32;
+                        self.buffer[x][y] = get_gray(diffuse.get(p.uv.x as i32, p.uv.y as i32), intensity);
                     }
                     phi += phi_step;
                 }
@@ -307,20 +305,7 @@ pub fn main() {
          
         let n: Vec3f = ((world_coords[2]-world_coords[0]) ^ (world_coords[1]-world_coords[0])).normalized();        
         let intensity = light_dir * n;
-        
         if intensity > 0.0 {
-            let l = (255.0 * intensity) as u32;
-
-            //canvas.triangle(
-            //    screen_coords[0].round(),
-            //    screen_coords[1].round(),
-            //    screen_coords[2].round(),
-            //    color);
-            
-            //normals[0] = n;
-            //normals[1] = n;
-            //normals[2] = n;
-            
             canvas.textured_triangle(verts, &model.diffuse, light_dir);
         }
     }
